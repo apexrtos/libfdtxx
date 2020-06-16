@@ -423,9 +423,11 @@ node::node(node &parent, std::string_view name)
 	const auto &ua{unit_address(*this)};
 	if (size(nn) > 31)
 		throw std::invalid_argument{"node name too long"};
-	if (std::find_if_not(begin(nn), end(nn), valid_node_char) != end(nn))
+	if (nn.empty() ||
+	    std::find_if_not(begin(nn), end(nn), valid_node_char) != end(nn))
 		throw std::invalid_argument{"invalid node name"};
-	if (std::find_if_not(begin(ua), end(ua), valid_node_char) != end(ua))
+	if (ua.has_value() && (ua->empty() ||
+	    std::find_if_not(begin(*ua), end(*ua), valid_node_char) != end(*ua)))
 		throw std::invalid_argument{"invalid unit address"};
 }
 
