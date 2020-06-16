@@ -1,8 +1,9 @@
-* tests
+libfdt++
+========
+
 * github CD/CI
 * save
 * property set/get for std::span<uint32_t>, std::span<uint64_t>?
 * return a range from as_stringlist (transform? filter?)
 * memory reservation block
 * boot cpuid
-* load() overload to read from file?
