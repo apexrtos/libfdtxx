@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <set>
 #include <span>
@@ -239,8 +240,11 @@ private:
 
 /*
  * load - load a flattened devicetree blob
+ *
+ * Throws exceptions.
  */
 fdt load(std::span<const std::byte>);
+fdt load(const std::filesystem::path &);
 
 /*
  * contains - test if fdt contains path

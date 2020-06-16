@@ -8,6 +8,7 @@
 #include "libfdt++.h"
 
 #include <algorithm>
+#include <fstream>
 #include <type_traits>
 
 extern "C" {
@@ -502,6 +503,16 @@ load(std::span<const std::byte> d)
 	/* TODO(incomplete): load boot cpuid */
 	load(d, 0, t.root());
 	return t;
+}
+
+fdt
+load(const std::filesystem::path &p)
+{
+	/* REVISIT: optimise? */
+	std::vector<std::byte> d(std::filesystem::file_size(p));
+	std::ifstream f(p, std::ios::binary);
+	f.read(reinterpret_cast<char *>(d.data()), d.size());
+	return load(d);
 }
 
 bool
