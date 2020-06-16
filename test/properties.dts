@@ -1,0 +1,8 @@
+/dts-v1/;
+/ {
+	property-empty;
+	property-u32 = /bits/ 32 <0x20>;
+	property-u64 = /bits/ 64 <0x40>;
+	property-string = "hello world";
+	property-stringlist = "hello", "world";
+};
