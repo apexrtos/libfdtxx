@@ -447,7 +447,7 @@ node_name(const node &n)
 	return nn.substr(0, nn.find('@'));
 }
 
-std::string_view
+std::optional<std::string_view>
 unit_address(const node &n)
 {
 	const auto &nn = n.name();

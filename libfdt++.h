@@ -182,7 +182,7 @@ std::string_view node_name(const node &);
 /*
  * unit_address - get unit-address part of node name
  */
-std::string_view unit_address(const node &);
+std::optional<std::string_view> unit_address(const node &);
 
 /*
  * add_node - add a subnode to a node
