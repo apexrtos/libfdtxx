@@ -83,16 +83,16 @@ find_impl(T &n, std::string_view path)
 		return l.name() < r;
 	});
 	if (it == c.end())
-		return {};
+		return std::nullopt;
 	/* unit address is optional in node name */
 	/* WTF: transform_view::iterator has no operator-> */
 	if ((*it).name() != nn && (!is_node(*it) || node_name(as_node(*it)) != nn))
-		return {};
+		return std::nullopt;
 	/* REVISIT: check for ambiguous path? */
 	if (sep == std::string_view::npos)
 		return std::ref(*it);
 	if (!is_node(*it))
-		return {};
+		return std::nullopt;
 	return find_impl(as_node(*it), path.substr(sep + 1));
 }
 
@@ -453,7 +453,7 @@ unit_address(const node &n)
 	const auto &nn = n.name();
 	auto at = nn.find('@');
 	if (at == std::string_view::npos)
-		return {};
+		return std::nullopt;
 	return nn.substr(at + 1);
 }
 
