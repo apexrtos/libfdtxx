@@ -281,10 +281,10 @@ set(property &p, const std::vector<std::string_view> &v)
 {
 	std::vector<std::byte> t;
 	for (const auto &s : v) {
-		if (v.empty())
+		if (s.empty())
 			continue;
-		const std::byte *b = reinterpret_cast<const std::byte *>(v.data());
-		t.insert(t.end(), b, b + v.size());
+		const std::byte *b = reinterpret_cast<const std::byte *>(s.data());
+		t.insert(t.end(), b, b + s.size());
 		if (s.back() != 0)
 			t.emplace_back(0_byte);
 	}
