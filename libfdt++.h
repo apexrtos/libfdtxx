@@ -56,8 +56,8 @@ public:
 	std::optional<std::reference_wrapper<const node>> parent() const;
 
 private:
-	std::optional<std::reference_wrapper<node>> parent_;
-	std::string name_;
+	const std::optional<std::reference_wrapper<node>> parent_;
+	const std::string name_;
 };
 
 /*
