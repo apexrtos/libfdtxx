@@ -9,6 +9,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <set>
 #include <span>
 #include <stdexcept>
