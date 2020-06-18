@@ -56,9 +56,15 @@ public:
 	std::optional<std::reference_wrapper<const node>> parent() const;
 
 private:
+	virtual bool v_equal(const piece &) const = 0;
+
 	const std::optional<std::reference_wrapper<node>> parent_;
 	const std::string name_;
+
+	friend bool operator==(const piece &, const piece &);
 };
+
+bool operator==(const piece &, const piece &);
 
 /*
  * is_*(piece &) - test if piece is property or node.
@@ -97,6 +103,8 @@ public:
 	void set(std::span<const std::byte>);
 
 private:
+	virtual bool v_equal(const piece &) const override;
+
 	container value_;
 };
 
@@ -172,6 +180,8 @@ public:
 	T& add(std::string_view name, A &&...);
 
 private:
+	virtual bool v_equal(const piece &) const override;
+
 	piece_set children_;
 };
 
@@ -237,6 +247,8 @@ public:
 private:
 	node root_;
 };
+
+bool operator==(const fdt &, const fdt &);
 
 /*
  * load - load a flattened devicetree blob

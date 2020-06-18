@@ -178,6 +178,12 @@ piece::parent() const
 }
 
 bool
+operator==(const piece &l, const piece &r)
+{
+	return l.name() == r.name() && l.v_equal(r);
+}
+
+bool
 is_property(const piece &p)
 {
 	return dynamic_cast<const property *>(&p) != nullptr;
@@ -238,6 +244,16 @@ void
 property::set(container &&v)
 {
 	value_ = std::move(v);
+}
+
+bool
+property::v_equal(const piece &r) const
+{
+	if (!is_property(r))
+		return false;
+	const auto &lv{get()};
+	const auto &rv{as_property(r).get()};
+	return std::equal(begin(lv), end(lv), begin(rv), end(rv));
 }
 
 void
@@ -431,6 +447,16 @@ node::node(node &parent, std::string_view name)
 		throw std::invalid_argument{"invalid unit address"};
 }
 
+bool
+node::v_equal(const piece &r) const
+{
+	if (!is_node(r))
+		return false;
+	const auto &lc{children()};
+	const auto &rc{as_node(r).children()};
+	return std::equal(begin(lc), end(lc), begin(rc), end(rc));
+}
+
 node &
 add_node(node &n, std::string_view name)
 {
@@ -491,6 +517,14 @@ const node &
 fdt::root() const
 {
 	return root_;
+}
+
+bool
+operator==(const fdt &l, const fdt &r)
+{
+	/* TODO(incomplete): memory reservation block */
+	/* TODO(incomplete): boot cpuid */
+	return l.root() == r.root();
 }
 
 fdt

@@ -372,3 +372,13 @@ TEST(fdt, get_property)
 	EXPECT_THROW(get_property(cf, "/x"), std::bad_optional_access);
 	EXPECT_THROW(get_property(cf, "/l1@1"), std::bad_cast);
 }
+
+TEST(fdt, equality)
+{
+	const auto &f1{fdt::load("path.dtb")};
+	const auto &f2{fdt::load("path.dtb")};
+	const auto &f3{fdt::load("basic.dtb")};
+
+	EXPECT_EQ(f1, f2);
+	EXPECT_NE(f2, f3);
+}
