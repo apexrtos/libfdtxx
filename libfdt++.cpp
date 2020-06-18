@@ -45,7 +45,7 @@ is_0_byte(std::byte v)
 void
 load(std::span<const std::byte> d, const int node_offset, node &n)
 {
-	const void *p = d.data();
+	const void *p = data(d);
 	int off;
 
 	fdt_for_each_property_offset(off, p, node_offset) {
@@ -85,10 +85,10 @@ find_impl(T &n, std::string_view path)
 	if (empty(nn))
 		throw std::invalid_argument{"bad path"};
 	auto c = n.children();
-	auto it = lower_bound(c.begin(), c.end(), nn, [](auto &l, auto &r) {
+	auto it = lower_bound(begin(c), end(c), nn, [](auto &l, auto &r) {
 		return l.name() < r;
 	});
-	if (it == c.end())
+	if (it == end(c))
 		return std::nullopt;
 	/* unit address is optional in node name */
 	/* WTF: transform_view::iterator has no operator-> */
@@ -158,7 +158,7 @@ piece::piece(node &parent, std::string_view name)
 , name_{name}
 {
 	/* REVISIT: optionally validate names? */
-	if (name_.empty())
+	if (empty(name_))
 		throw std::invalid_argument{"empty name"};
 }
 
@@ -264,7 +264,7 @@ property::v_equal(const piece &r) const
 void
 property::set(std::span<const std::byte> v)
 {
-	value_.assign(v.begin(), v.end());
+	value_.assign(begin(v), end(v));
 }
 
 void
@@ -285,15 +285,15 @@ void
 set(property &p, std::string_view v)
 {
 	/* string is empty or null teriminated, ok to assign */
-	if (v.empty() || v.back() == 0) {
-		set(p, {v.data(), v.size()});
+	if (empty(v) || v.back() == 0) {
+		set(p, {data(v), size(v)});
 		return;
 	}
 
 	/* string is not null terminated, create a temporary then assign */
 	std::vector<std::byte> t;
-	const std::byte *b = reinterpret_cast<const std::byte *>(v.data());
-	t.insert(t.end(), b, b + v.size());
+	const std::byte *b = reinterpret_cast<const std::byte *>(data(v));
+	t.insert(end(t), b, b + size(v));
 	t.emplace_back(0_byte);
 	set(p, std::move(t));
 }
@@ -303,10 +303,10 @@ set(property &p, const std::vector<std::string_view> &v)
 {
 	std::vector<std::byte> t;
 	for (const auto &s : v) {
-		if (s.empty())
+		if (empty(s))
 			continue;
-		const std::byte *b = reinterpret_cast<const std::byte *>(s.data());
-		t.insert(t.end(), b, b + s.size());
+		const std::byte *b = reinterpret_cast<const std::byte *>(data(s));
+		t.insert(end(t), b, b + size(s));
 		if (s.back() != 0)
 			t.emplace_back(0_byte);
 	}
@@ -328,19 +328,19 @@ set(property &p, std::span<const std::byte> v)
 bool
 is_empty(const property &p)
 {
-	return as_bytes(p).empty();
+	return empty(as_bytes(p));
 }
 
 bool
 is_u32(const property &p)
 {
-	return as_bytes(p).size() == sizeof(uint32_t);
+	return size(as_bytes(p)) == sizeof(uint32_t);
 }
 
 bool
 is_u64(const property &p)
 {
-	return as_bytes(p).size() == sizeof(uint64_t);
+	return size(as_bytes(p)) == sizeof(uint64_t);
 }
 
 bool
@@ -348,9 +348,9 @@ is_string(const property &p)
 {
 	/* must be null terminated with no embedded nulls */
 	const auto &v = as_bytes(p);
-	if (v.size() < 2)
+	if (size(v) < 2)
 		return false;
-	if (find(v.begin(), v.end(), 0_byte) != v.end() - 1)
+	if (find(begin(v), end(v), 0_byte) != end(v) - 1)
 		return false;
 	return true;
 }
@@ -361,11 +361,11 @@ is_stringlist(const property &p)
 	/* must be null terminated, may have embedded nulls, must not be
 	 * all null */
 	const auto &v = as_bytes(p);
-	if (v.size() < 2)
+	if (size(v) < 2)
 		return false;
 	if (v.back() != 0_byte)
 		return false;
-	return std::find_if_not(v.begin(), v.end(), is_0_byte) != v.end();
+	return std::find_if_not(begin(v), end(v), is_0_byte) != end(v);
 }
 
 /*
@@ -377,7 +377,7 @@ as_u32(const property &p)
 	if (!is_u32(p))
 		throw std::invalid_argument{"not a u32"};
 	uint32_t t;
-	std::copy_n(as_bytes(p).data(), sizeof(t),
+	std::copy_n(data(as_bytes(p)), sizeof(t),
 		    reinterpret_cast<std::byte *>(&t));
 	return fdt32_to_cpu(t);
 }
@@ -388,7 +388,7 @@ as_u64(const property &p)
 	if (!is_u64(p))
 		throw std::invalid_argument{"not a u64"};
 	uint64_t t;
-	std::copy_n(as_bytes(p).data(), sizeof(t),
+	std::copy_n(data(as_bytes(p)), sizeof(t),
 		    reinterpret_cast<std::byte *>(&t));
 	return fdt64_to_cpu(t);
 }
@@ -400,7 +400,7 @@ as_string(const property &p)
 	if (!is_string(p))
 		throw std::invalid_argument{"not a string"};
 	const auto &v = as_bytes(p);
-	return {reinterpret_cast<const char *>(v.data()), v.size() - 1};
+	return {reinterpret_cast<const char *>(data(v)), size(v) - 1};
 }
 
 std::vector<std::string_view>
@@ -411,11 +411,11 @@ as_stringlist(const property &p)
 		throw std::invalid_argument{"not a stringlist"};
 	std::vector<std::string_view> t;
 	const auto &v = as_bytes(p);
-	const char *d = reinterpret_cast<const char *>(v.data());
-	for (auto it = v.begin(); it != v.end();) {
-		auto e = std::find(it, v.end(), 0_byte) + 1;
+	const char *d = reinterpret_cast<const char *>(data(v));
+	for (auto it = begin(v); it != end(v);) {
+		auto e = std::find(it, end(v), 0_byte) + 1;
 		if (e - it > 1)
-			t.emplace_back(d + (it - v.begin()), e - it - 1);
+			t.emplace_back(d + (it - begin(v)), e - it - 1);
 		it = e;
 	}
 	return t;
@@ -444,7 +444,7 @@ node::node(node &parent, std::string_view name)
 	const auto &ua{unit_address(*this)};
 	if (size(nn) > 31)
 		throw std::invalid_argument{"node name too long"};
-	if (nn.empty() ||
+	if (empty(nn) ||
 	    std::find_if_not(begin(nn), end(nn), valid_node_char) != end(nn))
 		throw std::invalid_argument{"invalid node name"};
 	if (ua.has_value() && (ua->empty() ||
@@ -536,7 +536,7 @@ fdt
 load(std::span<const std::byte> d)
 {
 	/* TODO(efficiency): probably only need a minimal header check here */
-	if (auto r = fdt_check_full(d.data(), d.size()); r < 0)
+	if (auto r = fdt_check_full(data(d), size(d)); r < 0)
 		throw std::invalid_argument{fdt_strerror(r)};
 
 	fdt t;
@@ -552,7 +552,7 @@ load(const std::filesystem::path &p)
 	/* REVISIT: optimise? */
 	std::vector<std::byte> d(std::filesystem::file_size(p));
 	std::ifstream f(p, std::ios::binary);
-	f.read(reinterpret_cast<char *>(d.data()), d.size());
+	f.read(reinterpret_cast<char *>(data(d)), size(d));
 	return load(d);
 }
 
