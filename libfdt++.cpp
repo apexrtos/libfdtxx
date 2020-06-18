@@ -216,18 +216,11 @@ find_impl(T &n, std::string_view path)
 bool
 valid_node_char(char c)
 {
-	switch (c) {
-	case '0'...'9':
-	case 'a'...'z':
-	case 'A'...'Z':
-	case ',':
-	case '.':
-	case '_':
-	case '+':
-	case '-':
-		return true;
-	}
-	return false;
+	return
+	    (c >= '0' && c <= '9') ||
+	    (c >= 'a' && c <= 'z') ||
+	    (c >= 'A' && c <= 'Z') ||
+	    c == ',' || c == '.' || c == '_' || c == '+' || c == '-';
 }
 
 /*
@@ -238,20 +231,12 @@ valid_node_char(char c)
 bool
 valid_property_char(char c)
 {
-	switch (c) {
-	case '0'...'9':
-	case 'a'...'z':
-	case 'A'...'Z':
-	case ',':
-	case '.':
-	case '_':
-	case '+':
-	case '?':
-	case '#':
-	case '-':
-		return true;
-	}
-	return false;
+	return
+	    (c >= '0' && c <= '9') ||
+	    (c >= 'a' && c <= 'z') ||
+	    (c >= 'A' && c <= 'Z') ||
+	    c == ',' || c == '.' || c == '_' || c == '+' ||
+	    c == '?' || c == '#' || c == '-';
 }
 
 }
