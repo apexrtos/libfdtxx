@@ -1,9 +1,12 @@
 libfdt++
 ========
 
-* github CD/CI
-* save
+* github CI task to run on linux & windows
 * property set/get for std::span<uint32_t>, std::span<uint64_t>?
+  - maybe a nice way to get/set reg properties?
 * return a range from as_stringlist (transform? filter?)
 * memory reservation block
 * boot cpuid
+* inplace load
+  - we could avoid making copies of the FDT data by storing & returning
+    references to the FDT memory.
