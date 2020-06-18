@@ -32,9 +32,12 @@ operator""_byte(unsigned long long v)
 /*
  * is_0_byte - test if byte is equal to 0_byte
  */
-constexpr auto is_0_byte = [](std::byte v) {
+constexpr
+bool
+is_0_byte(std::byte v)
+{
 	return v == 0_byte;
-};
+}
 
 /*
  * load - load FDT node from d starting at node_offset into n
