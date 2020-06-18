@@ -382,3 +382,12 @@ TEST(fdt, equality)
 	EXPECT_EQ(f1, f2);
 	EXPECT_NE(f2, f3);
 }
+
+TEST(fdt, save_load)
+{
+	const auto &f1{fdt::load("path.dtb")};
+	const auto &s{save(f1)};
+	const auto &f2{fdt::load(s)};
+
+	EXPECT_EQ(f1, f2);
+}

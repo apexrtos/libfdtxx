@@ -40,6 +40,97 @@ is_0_byte(std::byte v)
 }
 
 /*
+ * fdt_resize - c++ fdt_resize wrapper
+ */
+void
+fdt_resize(std::vector<std::byte> &d, size_t sz = 0)
+{
+	d.resize(size(d) + std::max(sz, size(d) / 2));
+	if (auto r = ::fdt_resize(data(d), data(d), size(d)); r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
+ * fdt_create - c++ fdt_create wrapper
+ */
+void
+fdt_create(std::vector<std::byte> &d)
+{
+	int r;
+	while ((r = ::fdt_create(data(d), size(d))) == -FDT_ERR_NOSPACE)
+		fdt_resize(d, 128);
+	if (r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
+ * fdt_finish_reservemap - c++ fdt_finish_reservemap wrapper
+ */
+void
+fdt_finish_reservemap(std::vector<std::byte> &d)
+{
+	int r;
+	while ((r = ::fdt_finish_reservemap(data(d))) == -FDT_ERR_NOSPACE)
+		fdt_resize(d);
+	if (r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
+ * fdt_begin_node - c++ fdt_begin_node wrapper
+ */
+void
+fdt_begin_node(std::string_view n, std::vector<std::byte> &d)
+{
+	int r;
+	while ((r = ::fdt_begin_node(data(d), data(n))) == -FDT_ERR_NOSPACE)
+		fdt_resize(d);
+	if (r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
+ * fdt_end_node - c++ fdt_end_node wrapper
+ */
+void
+fdt_end_node(std::vector<std::byte> &d)
+{
+	int r;
+	while ((r = ::fdt_end_node(data(d))) == -FDT_ERR_NOSPACE)
+		fdt_resize(d);
+	if (r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
+ * fdt_property - c++ fdt_property wrapper
+ */
+void
+fdt_property(std::string_view n, std::span<const std::byte> v,
+	     std::vector<std::byte> &d)
+{
+	int r;
+	while ((r = ::fdt_property(data(d), data(n), data(v), size(v))) ==
+							-FDT_ERR_NOSPACE)
+		fdt_resize(d, size(v));
+	if (r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
+ * fdt_finish - c++ fdt_finish wrapper
+ */
+void
+fdt_finish(std::vector<std::byte> &d)
+{
+	int r;
+	while ((r = ::fdt_finish(data(d))) == -FDT_ERR_NOSPACE)
+		fdt_resize(d);
+	if (r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+}
+
+/*
  * load - load FDT node from d starting at node_offset into n
  */
 void
@@ -70,6 +161,21 @@ load(std::span<const std::byte> d, const int node_offset, node &n)
 	}
 	if (off < 0 && off != -FDT_ERR_NOTFOUND)
 		throw std::invalid_argument{fdt_strerror(off)};
+}
+
+/*
+ * save - save FDT piece p into d
+ */
+void
+save(const piece &p, std::vector<std::byte> &d)
+{
+	if (is_node(p)) {
+		fdt_begin_node(p.name(), d);
+		for (const auto &c : as_node(p).children())
+			save(c, d);
+		fdt_end_node(d);
+	} else
+		fdt_property(p.name(), as_property(p).get(), d);
 }
 
 /*
@@ -554,6 +660,22 @@ load(const std::filesystem::path &p)
 	std::ifstream f(p, std::ios::binary);
 	f.read(reinterpret_cast<char *>(data(d)), size(d));
 	return load(d);
+}
+
+std::vector<std::byte>
+save(const fdt &f)
+{
+	/* REVISIT: this is far from optimal but it's about as good as we can
+	 * get without reimplementing libfdt */
+	std::vector<std::byte> t{4000};
+	fdt_create(t);
+	/* TODO(incomplete): save memory reservation block */
+	/* TODO(incomplete): save boot cpuid */
+	fdt_finish_reservemap(t);
+	save(f.root(), t);
+	fdt_finish(t);
+	t.resize(fdt_totalsize(data(t)));
+	return t;
 }
 
 bool

@@ -259,6 +259,13 @@ fdt load(std::span<const std::byte>);
 fdt load(const std::filesystem::path &);
 
 /*
+ * save - save a flattened devicetree blob
+ *
+ * Throws exceptions.
+ */
+std::vector<std::byte> save(const fdt &);
+
+/*
  * contains - test if fdt contains path
  *
  * Throws std::invalid_argument if the path format is invalid.
