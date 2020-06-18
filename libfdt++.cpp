@@ -180,6 +180,8 @@ save(const piece &p, std::vector<std::byte> &d)
 
 /*
  * find_impl - find a piece of the FDT by path
+ *
+ * REVISIT: remove static_cast<const piece &> once MSVC supports ranges
  */
 template<class T>
 std::optional<std::reference_wrapper<
@@ -192,13 +194,14 @@ find_impl(T &n, std::string_view path)
 		throw std::invalid_argument{"bad path"};
 	auto c = n.children();
 	auto it = lower_bound(begin(c), end(c), nn, [](auto &l, auto &r) {
-		return l.name() < r;
+		return static_cast<const piece &>(l).name() < r;
 	});
 	if (it == end(c))
 		return std::nullopt;
 	/* unit address is optional in node name */
 	/* WTF: transform_view::iterator has no operator-> */
-	if ((*it).name() != nn && (!is_node(*it) || node_name(as_node(*it)) != nn))
+	if (static_cast<const piece &>(*it).name() != nn &&
+	    (!is_node(*it) || node_name(as_node(*it)) != nn))
 		return std::nullopt;
 	/* REVISIT: check for ambiguous path? */
 	if (sep == std::string_view::npos)
