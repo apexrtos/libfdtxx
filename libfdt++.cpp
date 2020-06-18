@@ -22,7 +22,9 @@ namespace {
 /*
  * _byte - create a byte literal
  */
-constexpr std::byte operator""_byte(unsigned long long v)
+constexpr
+std::byte
+operator""_byte(unsigned long long v)
 {
 	return static_cast<std::byte>(v);
 }
