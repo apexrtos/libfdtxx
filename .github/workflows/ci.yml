@@ -1,0 +1,16 @@
+---
+name: Run Tests
+on:
+        push:
+        schedule:
+                - cron: '0 0 * * 0'
+jobs:
+        gcc-10:
+                name: GCC 10 Build
+                runs-on: ubuntu-20.04
+                steps:
+                        - uses: actions/checkout@v2
+                        - name: Setup
+                          run: sudo apt-get install build-essential
+                        - name: Test
+                          run: make check
