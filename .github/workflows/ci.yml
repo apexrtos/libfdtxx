@@ -7,13 +7,15 @@ on:
 jobs:
         gcc-10:
                 name: GCC 10 Build
-                runs-on: ubuntu-20.04
+                runs-on: ubuntu-latest
+                container: archlinux:latest
                 steps:
-                        - uses: actions/checkout@v2
                         - name: Setup
                           run: |
-                                sudo apt-get install build-essential g++-10 libfdt-dev libgtest-dev
-                                sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10 --slave /usr/bin/gcov gcov /usr/bin/gcov-10
+                                pacman -Syu --noconfirm
+                                pacman -Sy base-devel git gtest dtc --noconfirm
+                        - name: Clone
+                          uses: actions/checkout@v2
                         - name: Test
                           run: make check
 
