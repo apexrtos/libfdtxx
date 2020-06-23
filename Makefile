@@ -7,7 +7,7 @@ test/passed: test/test
 	touch test/passed
 
 test/test: test/test.cpp libfdt++.cpp libfdt++.h
-	g++ -o $@ $(CXXFLAGS) test/test.cpp libfdt++.cpp -lfdt -lgtest -lgtest_main
+	$(CXX) -o $@ $(CXXFLAGS) test/test.cpp libfdt++.cpp -lfdt -lgtest -lgtest_main
 
 clean:
 	rm -f test/test test/passed
