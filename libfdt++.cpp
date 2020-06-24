@@ -189,7 +189,7 @@ find_impl(T &n, std::string_view path)
 	auto nn = path.substr(0, sep);
 	if (empty(nn))
 		throw std::invalid_argument{"bad path"};
-	auto c = n.children();
+	auto c = children(n);
 	auto it = lower_bound(begin(c), end(c), nn, [](auto &l, auto &r) {
 		return name(l) < r;
 	});

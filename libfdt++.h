@@ -163,17 +163,9 @@ public:
 	node() = default;
 	node(node &parent, std::string_view name);
 
-	/*
-	 * children - get node children.
-	 *
-	 * Returns an iterable container of piece references.
-	 */
 	auto children();
 	auto children() const;
 
-	/*
-	 * add - add a property or subnode to node.
-	 */
 	template<class T, class ...A>
 	T& add(std::string_view name, A &&...);
 
@@ -192,6 +184,14 @@ std::string_view node_name(const node &);
  * unit_address - get unit-address part of node name
  */
 std::optional<std::string_view> unit_address(const node &);
+
+/*
+ * children - get node children.
+ *
+ * Returns an iterable container of piece references.
+ */
+template<class Node>
+auto children(Node &);
 
 /*
  * properties - get node properties.
@@ -391,16 +391,23 @@ node::add(std::string_view name, A &&...a)
 
 template<class Node>
 auto
+children(Node &n)
+{
+	return n.children();
+}
+
+template<class Node>
+auto
 properties(Node &n)
 {
 #ifdef __cpp_lib_ranges
 	/* REVISIT: can we avoid using a lambda here? */
-	return n.children() | std::views::filter(is_property) |
+	return children(n) | std::views::filter(is_property) |
 	    std::views::transform([](auto &c) -> decltype((as_property(c))) {
 		return as_property(c);
 	});
 #else
-	auto c{n.children()};
+	auto c{children(n)};
 	std::vector<std::reference_wrapper<std::remove_reference_t<decltype((as_property(c.front().get())))>>> t;
 	for (auto &p : c) {
 		if (!is_property(p))
@@ -417,12 +424,12 @@ subnodes(Node &n)
 {
 #ifdef __cpp_lib_ranges
 	/* REVISIT: can we avoid using a lambda here? */
-	return n.children() | std::views::filter(is_node) |
+	return children(n) | std::views::filter(is_node) |
 	    std::views::transform([](auto &c) -> decltype((as_node(c))) {
 		return as_node(c);
 	});
 #else
-	auto c{n.children()};
+	auto c{children(n)};
 	std::vector<std::reference_wrapper<std::remove_reference_t<decltype((as_node(c.front().get())))>>> t;
 	for (auto &n : c) {
 		if (!is_node(n))
