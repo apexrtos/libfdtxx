@@ -1,22 +1,20 @@
 ---
-name: Run Tests
+name: GCC 10
 on:
         push:
         schedule:
                 - cron: '0 0 * * 0'
+        pull-request:
 jobs:
         gcc-10:
-                name: GCC 10 Build
+                name: Build & Test
                 runs-on: ubuntu-latest
                 container: archlinux:latest
                 steps:
                         - name: Setup
                           run: |
-                                pacman -Syu --noconfirm
                                 pacman -Sy base-devel git gtest dtc --noconfirm
                         - name: Clone
                           uses: actions/checkout@v2
                         - name: Test
                           run: make check
-
-
