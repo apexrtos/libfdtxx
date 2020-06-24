@@ -40,19 +40,7 @@ public:
 	piece(node &parent, std::string_view name);
 	virtual ~piece() = 0;
 
-	/*
-	 * name() - get name of piece.
-	 *
-	 * For a property, this is the property name.
-	 * For a node this is the node name including unit address.
-	 */
 	std::string_view name() const;
-
-	/*
-	 * parent() - get node containing piece.
-	 *
-	 * Root node has no parent.
-	 */
 	std::optional<std::reference_wrapper<node>> parent();
 	std::optional<std::reference_wrapper<const node>> parent() const;
 
@@ -66,6 +54,22 @@ private:
 };
 
 bool operator==(const piece &, const piece &);
+
+/*
+ * name(piece &) - get name of a piece
+ *
+ * For a property, this is the property name.
+ * For a node this is the node name including unit address.
+ */
+std::string_view name(const piece &);
+
+/*
+ * parent(piece &) - get node containing piece.
+ *
+ * Root node has no parent.
+ */
+std::optional<std::reference_wrapper<node>> parent(piece &);
+std::optional<std::reference_wrapper<const node>> parent(const piece &);
 
 /*
  * is_*(piece &) - test if piece is property or node.
@@ -92,14 +96,7 @@ public:
 
 	property(node &parent, std::string_view name);
 
-	/*
-	 * get() - get property value.
-	 */
 	std::span<const std::byte> get() const;
-
-	/*
-	 * set() - set property value.
-	 */
 	void set(container &&);
 	void set(std::span<const std::byte>);
 
@@ -264,6 +261,12 @@ private:
 };
 
 bool operator==(const fdt &, const fdt &);
+
+/*
+ * root(fdt &) - get root node of flattened device tree
+ */
+node& root(fdt &);
+const node& root(const fdt &);
 
 /*
  * load - load a flattened devicetree blob

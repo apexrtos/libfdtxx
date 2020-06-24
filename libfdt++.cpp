@@ -165,16 +165,13 @@ load(std::span<const std::byte> d, const int node_offset, node &n)
 
 /*
  * save - save FDT node n into d
- *
- * REVISIT: remove static_cast<const property &> once MSVC supports ranges
  */
 void
 save(const node &n, std::vector<std::byte> &d)
 {
-	fdt_begin_node(n.name(), d);
+	fdt_begin_node(name(n), d);
 	for (const auto &cp : properties(n))
-		fdt_property(static_cast<const property &>(cp).name(),
-			     static_cast<const property &>(cp).get(), d);
+		fdt_property(name(cp), as_bytes(cp), d);
 	for (const auto &cn : subnodes(n))
 		save(cn, d);
 	fdt_end_node(d);
@@ -182,8 +179,6 @@ save(const node &n, std::vector<std::byte> &d)
 
 /*
  * find_impl - find a piece of the FDT by path
- *
- * REVISIT: remove static_cast<const piece &> once MSVC supports ranges
  */
 template<class T>
 std::optional<std::reference_wrapper<
@@ -196,14 +191,12 @@ find_impl(T &n, std::string_view path)
 		throw std::invalid_argument{"bad path"};
 	auto c = n.children();
 	auto it = lower_bound(begin(c), end(c), nn, [](auto &l, auto &r) {
-		return static_cast<const piece &>(l).name() < r;
+		return name(l) < r;
 	});
 	if (it == end(c))
 		return std::nullopt;
 	/* unit address is optional in node name */
-	/* WTF: transform_view::iterator has no operator-> */
-	if (static_cast<const piece &>(*it).name() != nn &&
-	    (!is_node(*it) || node_name(as_node(*it)) != nn))
+	if (name(*it) != nn && (!is_node(*it) || node_name(as_node(*it)) != nn))
 		return std::nullopt;
 	/* REVISIT: check for ambiguous path? */
 	if (sep == std::string_view::npos)
@@ -281,7 +274,24 @@ piece::parent() const
 bool
 operator==(const piece &l, const piece &r)
 {
-	return l.name() == r.name() && l.v_equal(r);
+	return name(l) == name(r) && l.v_equal(r);
+}
+
+std::string_view
+name(const piece &p)
+{
+	return p.name();
+}
+
+std::optional<std::reference_wrapper<node>>
+parent(piece &p)
+{
+	return p.parent();
+}
+
+std::optional<std::reference_wrapper<const node>> parent(const piece &p)
+{
+	return p.parent();
 }
 
 bool
@@ -573,14 +583,14 @@ add_property(node &n, std::string_view name)
 std::string_view
 node_name(const node &n)
 {
-	const auto &nn = n.name();
+	const auto &nn = name(n);
 	return nn.substr(0, nn.find('@'));
 }
 
 std::optional<std::string_view>
 unit_address(const node &n)
 {
-	const auto &nn = n.name();
+	const auto &nn = name(n);
 	auto at = nn.find('@');
 	if (at == std::string_view::npos)
 		return std::nullopt;
@@ -628,6 +638,18 @@ operator==(const fdt &l, const fdt &r)
 	return l.root() == r.root();
 }
 
+node &
+root(fdt &f)
+{
+	return f.root();
+}
+
+const node &
+root(const fdt &f)
+{
+	return f.root();
+}
+
 fdt
 load(std::span<const std::byte> d)
 {
@@ -638,7 +660,7 @@ load(std::span<const std::byte> d)
 	fdt t;
 	/* TODO(incomplete): load memory reservation block */
 	/* TODO(incomplete): load boot cpuid */
-	load(d, 0, t.root());
+	load(d, 0, root(t));
 	return t;
 }
 
@@ -662,7 +684,7 @@ save(const fdt &f)
 	/* TODO(incomplete): save memory reservation block */
 	/* TODO(incomplete): save boot cpuid */
 	fdt_finish_reservemap(t);
-	save(f.root(), t);
+	save(root(f), t);
 	fdt_finish(t);
 	t.resize(fdt_totalsize(data(t)));
 	return t;
@@ -673,7 +695,7 @@ contains(const fdt &f, std::string_view path)
 {
 	if (!path.starts_with('/'))
 		throw std::invalid_argument{"bad path"};
-	return contains(f.root(), path.substr(1));
+	return contains(root(f), path.substr(1));
 }
 
 std::optional<std::reference_wrapper<const piece>>
@@ -681,7 +703,7 @@ find(const fdt &f, std::string_view path)
 {
 	if (!path.starts_with('/'))
 		throw std::invalid_argument{"bad path"};
-	return find(f.root(), path.substr(1));
+	return find(root(f), path.substr(1));
 
 }
 
@@ -690,7 +712,7 @@ find(fdt &f, std::string_view path)
 {
 	if (!path.starts_with('/'))
 		throw std::invalid_argument{"bad path"};
-	return find(f.root(), path.substr(1));
+	return find(root(f), path.substr(1));
 }
 
 node &
