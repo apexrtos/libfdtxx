@@ -1,13 +1,26 @@
 /dts-v1/;
 / {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	l1@1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <1>;
 		l2@1 {
+			reg = <1>;
 			l1#1-l2#1-prop = <11>;
 		};
 	};
 
 	l1@2 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <2>;
 		l2@1 {
+			reg = <1>;
 			l1#2-l2#1-prop = <21>;
 		};
 	};

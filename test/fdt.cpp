@@ -235,6 +235,74 @@ TEST(node, name)
 	EXPECT_EQ(unit_address(n), "unit-address");
 }
 
+TEST(node, properties)
+{
+	auto f{fdt::load("path.dtb")};
+	const auto &fc{f};
+	std::array<const char *, 2> props{"#address-cells", "#size-cells"};
+	size_t i;
+
+	/*
+	 * properties(node &)
+	 *
+	 * REVISIT: remove static_cast when MSVC supports ranges
+	 */
+	i = 0;
+	for (auto &p : properties(f.root())) {
+		ASSERT_LT(i, props.size());
+		EXPECT_EQ(static_cast<fdt::property &>(p).name(), props[i]);
+		++i;
+	};
+	EXPECT_EQ(i, props.size());
+
+	/*
+	 * properties(const node &)
+	 *
+	 * REVISIT: remove static_cast when MSVC supports ranges
+	 */
+	i = 0;
+	for (auto &p : properties(fc.root())) {
+		ASSERT_LT(i, props.size());
+		EXPECT_EQ(static_cast<const fdt::property &>(p).name(), props[i]);
+		++i;
+	};
+	EXPECT_EQ(i, props.size());
+}
+
+TEST(node, subnodes)
+{
+	auto f{fdt::load("path.dtb")};
+	const auto &fc{f};
+	std::array<const char *, 2> nodes{"l1@1", "l1@2"};
+	size_t i;
+
+	/*
+	 * subnodes(node &)
+	 *
+	 * REVISIT: remove static_cast when MSVC supports ranges
+	 */
+	i = 0;
+	for (auto &n : subnodes(f.root())) {
+		ASSERT_LT(i, nodes.size());
+		EXPECT_EQ(static_cast<fdt::node &>(n).name(), nodes[i]);
+		++i;
+	};
+	EXPECT_EQ(i, nodes.size());
+
+	/*
+	 * subnodes(const node &)
+	 *
+	 * REVISIT: remove static_cast when MSVC supports ranges
+	 */
+	i = 0;
+	for (auto &n : subnodes(fc.root())) {
+		ASSERT_LT(i, nodes.size());
+		EXPECT_EQ(static_cast<const fdt::node &>(n).name(), nodes[i]);
+		++i;
+	};
+	EXPECT_EQ(i, nodes.size());
+}
+
 TEST(property, name)
 {
 	fdt::fdt f;

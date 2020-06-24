@@ -197,6 +197,20 @@ std::string_view node_name(const node &);
 std::optional<std::string_view> unit_address(const node &);
 
 /*
+ * properties - get node properties.
+ *
+ * Returns an iterable container of property references.
+ */
+auto properties(auto &);
+
+/*
+ * subnodes - get node subnodes
+ *
+ * Returns an iterable container of node references.
+ */
+auto subnodes(auto &);
+
+/*
  * add_node - add a subnode to a node
  *
  * Throws std::invalid_argument if the name already exists.
@@ -368,6 +382,48 @@ node::add(std::string_view name, A &&...a)
 	if (!r.second)
 		throw std::invalid_argument{"name exists"};
 	return static_cast<T &>(**r.first);
+}
+
+auto
+properties(auto &n)
+{
+#ifdef __cpp_lib_ranges
+	/* REVISIT: can we avoid using a lambda here? */
+	return n.children() | std::views::filter(is_property) |
+	    std::views::transform([](auto &c) -> decltype((as_property(c))) {
+		return as_property(c);
+	});
+#else
+	auto c{n.children()};
+	std::vector<std::reference_wrapper<std::remove_reference_t<decltype((as_property(c.front().get())))>>> t;
+	for (auto &p : c) {
+		if (!is_property(p))
+			continue;
+		t.push_back(std::ref(as_property(p)));
+	}
+	return t;
+#endif
+}
+
+auto
+subnodes(auto &n)
+{
+#ifdef __cpp_lib_ranges
+	/* REVISIT: can we avoid using a lambda here? */
+	return n.children() | std::views::filter(is_node) |
+	    std::views::transform([](auto &c) -> decltype((as_node(c))) {
+		return as_node(c);
+	});
+#else
+	auto c{n.children()};
+	std::vector<std::reference_wrapper<std::remove_reference_t<decltype((as_node(c.front().get())))>>> t;
+	for (auto &n : c) {
+		if (!is_node(n))
+			continue;
+		t.push_back(std::ref(as_node(n)));
+	}
+	return t;
+#endif
 }
 
 template<class ...T>
