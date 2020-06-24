@@ -449,4 +449,4 @@ add_property(node &n, std::string_view name, T &&...value)
 	return p;
 }
 
-};
+}
