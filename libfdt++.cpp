@@ -164,18 +164,20 @@ load(std::span<const std::byte> d, const int node_offset, node &n)
 }
 
 /*
- * save - save FDT piece p into d
+ * save - save FDT node n into d
+ *
+ * REVISIT: remove static_cast<const property &> once MSVC supports ranges
  */
 void
-save(const piece &p, std::vector<std::byte> &d)
+save(const node &n, std::vector<std::byte> &d)
 {
-	if (is_node(p)) {
-		fdt_begin_node(p.name(), d);
-		for (const auto &c : as_node(p).children())
-			save(c, d);
-		fdt_end_node(d);
-	} else
-		fdt_property(p.name(), as_property(p).get(), d);
+	fdt_begin_node(n.name(), d);
+	for (const auto &cp : properties(n))
+		fdt_property(static_cast<const property &>(cp).name(),
+			     static_cast<const property &>(cp).get(), d);
+	for (const auto &cn : subnodes(n))
+		save(cn, d);
+	fdt_end_node(d);
 }
 
 /*
