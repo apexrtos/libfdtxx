@@ -198,14 +198,16 @@ std::optional<std::string_view> unit_address(const node &);
  *
  * Returns an iterable container of property references.
  */
-auto properties(auto &);
+template<class Node>
+auto properties(Node &);
 
 /*
  * subnodes - get node subnodes
  *
  * Returns an iterable container of node references.
  */
-auto subnodes(auto &);
+template<class Node>
+auto subnodes(Node &);
 
 /*
  * add_node - add a subnode to a node
@@ -387,8 +389,9 @@ node::add(std::string_view name, A &&...a)
 	return static_cast<T &>(**r.first);
 }
 
+template<class Node>
 auto
-properties(auto &n)
+properties(Node &n)
 {
 #ifdef __cpp_lib_ranges
 	/* REVISIT: can we avoid using a lambda here? */
@@ -408,8 +411,9 @@ properties(auto &n)
 #endif
 }
 
+template<class Node>
 auto
-subnodes(auto &n)
+subnodes(Node &n)
 {
 #ifdef __cpp_lib_ranges
 	/* REVISIT: can we avoid using a lambda here? */
