@@ -46,7 +46,8 @@ void
 fdt_resize(std::vector<std::byte> &d, size_t sz = 0)
 {
 	d.resize(size(d) + std::max(sz, size(d) / 2));
-	if (auto r = ::fdt_resize(data(d), data(d), size(d)); r < 0)
+	if (auto r = ::fdt_resize(data(d), data(d), static_cast<int>(size(d)));
+							r < 0)
 		throw std::runtime_error{fdt_strerror(r)};
 }
 
@@ -57,7 +58,8 @@ void
 fdt_create(std::vector<std::byte> &d)
 {
 	int r;
-	while ((r = ::fdt_create(data(d), size(d))) == -FDT_ERR_NOSPACE)
+	while ((r = ::fdt_create(data(d), static_cast<int>(size(d)))) ==
+							-FDT_ERR_NOSPACE)
 		fdt_resize(d, 128);
 	if (r < 0)
 		throw std::runtime_error{fdt_strerror(r)};
@@ -110,7 +112,8 @@ fdt_property(std::string_view n, std::span<const std::byte> v,
 	     std::vector<std::byte> &d)
 {
 	int r;
-	while ((r = ::fdt_property(data(d), data(n), data(v), size(v))) ==
+	while ((r = ::fdt_property(data(d), data(n), data(v),
+				   static_cast<int>(size(v)))) ==
 							-FDT_ERR_NOSPACE)
 		fdt_resize(d, size(v));
 	if (r < 0)

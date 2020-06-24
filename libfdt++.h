@@ -431,10 +431,10 @@ subnodes(Node &n)
 #else
 	auto c{children(n)};
 	std::vector<std::reference_wrapper<std::remove_reference_t<decltype((as_node(c.front().get())))>>> t;
-	for (auto &n : c) {
-		if (!is_node(n))
+	for (auto &cn : c) {
+		if (!is_node(cn))
 			continue;
-		t.push_back(std::ref(as_node(n)));
+		t.push_back(std::ref(as_node(cn)));
 	}
 	return t;
 #endif
