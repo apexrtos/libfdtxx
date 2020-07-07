@@ -618,6 +618,30 @@ find(node &n, std::string_view path)
 	return find_impl(n, path);
 }
 
+node &
+get_node(node &n, std::string_view path)
+{
+	return as_node(find(n, path).value());
+}
+
+const node &
+get_node(const node &n, std::string_view path)
+{
+	return as_node(find(n, path).value());
+}
+
+property &
+get_property(node &n, std::string_view path)
+{
+	return as_property(find(n, path).value());
+}
+
+const property &
+get_property(const node &n, std::string_view path)
+{
+	return as_property(find(n, path).value());
+}
+
 /*
  * fdt
  */

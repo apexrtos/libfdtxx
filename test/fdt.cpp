@@ -371,6 +371,44 @@ TEST(node, find)
 	EXPECT_EQ(find(root(fc), "x").has_value(), false);
 }
 
+TEST(node, get_node)
+{
+	auto f{fdt::load("path.dtb")};
+	auto &n{get_node(f, "/l1@1")};
+	const auto &cn{n};
+
+	/* get_node(node &) */
+	EXPECT_EQ(name(get_node(n, "l2@1")), "l2@1");
+	EXPECT_THROW(get_node(n, "/x"), std::invalid_argument);
+	EXPECT_THROW(get_node(n, "x"), std::bad_optional_access);
+	EXPECT_THROW(get_node(n, "reg"), std::bad_cast);
+
+	/* get_node(const node &) */
+	EXPECT_EQ(name(get_node(cn, "l2@1")), "l2@1");
+	EXPECT_THROW(get_node(cn, "/x"), std::invalid_argument);
+	EXPECT_THROW(get_node(cn, "x"), std::bad_optional_access);
+	EXPECT_THROW(get_node(cn, "reg"), std::bad_cast);
+}
+
+TEST(node, get_property)
+{
+	auto f{fdt::load("path.dtb")};
+	auto &n{get_node(f, "/l1@1")};
+	const auto &cn{n};
+
+	/* get_property(node &) */
+	EXPECT_EQ(name(get_property(n, "reg")), "reg");
+	EXPECT_THROW(get_property(n, "/x"), std::invalid_argument);
+	EXPECT_THROW(get_property(n, "x"), std::bad_optional_access);
+	EXPECT_THROW(get_property(n, "l2@1"), std::bad_cast);
+
+	/* get_property(const node &) */
+	EXPECT_EQ(name(get_property(cn, "reg")), "reg");
+	EXPECT_THROW(get_property(cn, "/x"), std::invalid_argument);
+	EXPECT_THROW(get_property(cn, "x"), std::bad_optional_access);
+	EXPECT_THROW(get_property(cn, "l2@1"), std::bad_cast);
+}
+
 TEST(fdt, find)
 {
 	auto f{fdt::load("path.dtb")};

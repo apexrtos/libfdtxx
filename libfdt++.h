@@ -248,6 +248,28 @@ std::optional<std::reference_wrapper<piece>>
 find(node &, std::string_view path);
 
 /*
+ * get_node - get a node by path
+ *
+ * Throws
+ *	std::invalid_argument if the path format is invalid.
+ *	std::bad_optional_access if the path does not exist.
+ *	std::bad_cast if the path does not refer to a node.
+ */
+node& get_node(node &, std::string_view path);
+const node& get_node(const node &, std::string_view path);
+
+/*
+ * get_property - get a property by path
+ *
+ * Throws
+ *	std::invalid_argument if the path format is invalid.
+ *	std::bad_optional_access if the path does not exist.
+ *	std::bad_cast if the path does not refer to a property.
+ */
+property& get_property(node &, std::string_view path);
+const property& get_property(const node &, std::string_view path);
+
+/*
  * fdt
  */
 class fdt {
