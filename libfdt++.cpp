@@ -645,16 +645,20 @@ get_property(const node &n, std::string_view path)
 /*
  * fdt
  */
+fdt::fdt()
+: root_{std::make_unique<node>()}
+{ }
+
 node &
 fdt::root()
 {
-	return root_;
+	return *root_;
 }
 
 const node &
 fdt::root() const
 {
-	return root_;
+	return *root_;
 }
 
 bool

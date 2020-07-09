@@ -38,6 +38,11 @@ class piece {
 public:
 	piece() = default;
 	piece(node &parent, std::string_view name);
+
+	piece(piece &&) = delete;
+	piece(const piece &) = delete;
+	piece &operator=(piece &&) = delete;
+	piece &operator=(const piece &) = delete;
 	virtual ~piece() = 0;
 
 	std::string_view name() const;
@@ -274,6 +279,14 @@ const property& get_property(const node &, std::string_view path);
  */
 class fdt {
 public:
+	fdt();
+
+	fdt(fdt &&) = default;
+	fdt(const fdt &) = delete;
+	fdt &operator=(fdt &&) = default;
+	fdt &operator=(const fdt &) = delete;
+	~fdt() = default;
+
 	/* TODO(incomplete): memory reservation block */
 	/* TODO(incomplete): boot cpuid */
 
@@ -281,7 +294,7 @@ public:
 	const node& root() const;
 
 private:
-	node root_;
+	std::unique_ptr<node> root_;
 };
 
 bool operator==(const fdt &, const fdt &);
