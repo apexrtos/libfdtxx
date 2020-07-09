@@ -698,11 +698,31 @@ load(std::span<const std::byte> d)
 fdt
 load(const std::filesystem::path &p)
 {
-	/* REVISIT: optimise? */
-	std::vector<std::byte> d(std::filesystem::file_size(p));
+	return load_keep(p).first;
+}
+
+std::pair<fdt, std::vector<std::byte>>
+load_keep(const std::filesystem::path &p)
+{
+	/* REVISIT(efficiency): something lighter than ifstream? */
+	std::vector<std::byte> d;
 	std::ifstream f(p, std::ios::binary);
-	f.read(reinterpret_cast<char *>(data(d)), size(d));
-	return load(d);
+
+	auto fill = [&](size_t len) {
+		const auto prev{d.size()};
+		d.resize(len);
+		f.read(reinterpret_cast<char *>(data(d)) + prev, len - prev);
+		if (static_cast<size_t>(f.gcount()) != len - prev)
+			throw std::runtime_error{fdt_strerror(FDT_ERR_TRUNCATED)};
+	};
+
+	fill(FDT_V1_SIZE);
+	fill(fdt_header_size(data(d)));
+	if (auto r = fdt_check_header(data(d)); r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+	fill(fdt_totalsize(data(d)));
+
+	return {load(d), std::move(d)};
 }
 
 std::vector<std::byte>

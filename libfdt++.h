@@ -307,11 +307,13 @@ const node& root(const fdt &);
 
 /*
  * load - load a flattened devicetree blob
+ * load_keep - load a flattened devicetree blob and return loaded bytes
  *
  * Throws exceptions.
  */
 fdt load(std::span<const std::byte>);
 fdt load(const std::filesystem::path &);
+std::pair<fdt, std::vector<std::byte>> load_keep(const std::filesystem::path &);
 
 /*
  * save - save a flattened devicetree blob
