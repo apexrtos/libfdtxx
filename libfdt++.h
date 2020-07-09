@@ -47,7 +47,7 @@ public:
 private:
 	virtual bool v_equal(const piece &) const = 0;
 
-	const std::optional<std::reference_wrapper<node>> parent_;
+	const std::optional<std::reference_wrapper<node>> parent_{std::nullopt};
 	const std::string name_;
 
 	friend bool operator==(const piece &, const piece &);
