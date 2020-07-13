@@ -10,3 +10,8 @@ libfdt++
 * inplace load
   - we could avoid making copies of the FDT data by storing & returning
     references to the FDT memory.
+
+libfit++
+========
+
+* support for encrypted image data

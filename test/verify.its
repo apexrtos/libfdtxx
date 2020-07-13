@@ -1,0 +1,72 @@
+/dts-v1/;
+/ {
+	description = "Test";
+
+	images {
+		test-1 {
+			description = "Test Image Hashes and Signatures";
+			data = [000102030405060708090a0b0c0d0e0f10];
+			type = "firmware";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+			hash-2 {
+				algo = "md5";
+			};
+			hash-3 {
+				algo = "sha1";
+			};
+			hash-4 {
+				algo = "sha256";
+			};
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+			signature-4 {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+		};
+		test-2 {
+			description = "Test Data for Configuration Signatures";
+			data = [100f0e0d0c0b0a09080706050403020100];
+			type = "firmware";
+			compression = "none";
+			hash {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		config-1 {
+			description = "Sign One Image";
+			image-1 = "test-1";
+			signature {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
+				sign-images = "image-1";
+			};
+		};
+		config-2 {
+			description = "Sign Two Images";
+			image-1 = "test-1";
+			image-2 = "test-2";
+			signature {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
+				sign-images = "image-1", "image-2";
+			};
+		};
+	};
+};
