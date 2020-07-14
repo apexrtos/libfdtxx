@@ -71,6 +71,11 @@ bool operator==(const piece &, const piece &);
 std::string_view name(const piece &);
 
 /*
+ * path(piece &) - get path from root of tree to piece
+ */
+std::string path(const piece &);
+
+/*
  * parent(piece &) - get node containing piece.
  *
  * Root node has no parent.

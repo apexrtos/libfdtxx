@@ -12,6 +12,17 @@ operator""_b(unsigned long long v)
 
 }
 
+TEST(piece, path)
+{
+	auto f{fdt::load("path.dtb")};
+
+	EXPECT_EQ(path(root(f)), "/");
+	EXPECT_EQ(path(get_node(f, "/l1@1")), "/l1@1");
+	EXPECT_EQ(path(get_property(f, "/l1@1/reg")), "/l1@1/reg");
+	EXPECT_EQ(path(get_node(f, "/l1@1/l2@1")), "/l1@1/l2@1");
+	EXPECT_EQ(path(get_property(f, "/l1@1/l2@1/reg")), "/l1@1/l2@1/reg");
+}
+
 TEST(piece, parent)
 {
 	auto f{fdt::load("path.dtb")};

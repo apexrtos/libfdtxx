@@ -286,6 +286,19 @@ name(const piece &p)
 	return p.name();
 }
 
+std::string
+path(const piece &p)
+{
+	if (!parent(p))
+		return "/";
+
+	auto t{path(parent(p).value())};
+	if (size(t) > 1)
+		t.append("/");
+	t.append(name(p));
+	return t;
+}
+
 std::optional<std::reference_wrapper<node>>
 parent(piece &p)
 {
