@@ -441,18 +441,6 @@ is_empty(const property &p)
 }
 
 bool
-is_u32(const property &p)
-{
-	return size(as_bytes(p)) == sizeof(uint32_t);
-}
-
-bool
-is_u64(const property &p)
-{
-	return size(as_bytes(p)) == sizeof(uint64_t);
-}
-
-bool
 is_string(const property &p)
 {
 	/* must be null terminated with no embedded nulls */
@@ -480,28 +468,6 @@ is_stringlist(const property &p)
 /*
  * as_*
  */
-uint32_t
-as_u32(const property &p)
-{
-	if (!is_u32(p))
-		throw std::invalid_argument{"not a u32"};
-	uint32_t t;
-	std::copy_n(data(as_bytes(p)), sizeof(t),
-		    reinterpret_cast<std::byte *>(&t));
-	return fdt32_to_cpu(t);
-}
-
-uint64_t
-as_u64(const property &p)
-{
-	if (!is_u64(p))
-		throw std::invalid_argument{"not a u64"};
-	uint64_t t;
-	std::copy_n(data(as_bytes(p)), sizeof(t),
-		    reinterpret_cast<std::byte *>(&t));
-	return fdt64_to_cpu(t);
-}
-
 std::string_view
 as_string(const property &p)
 {

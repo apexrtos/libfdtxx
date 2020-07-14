@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include <bit>
+#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -125,14 +127,17 @@ void set(property &, std::span<const std::byte>);
  * is_*(property &) - test if property value can be converted to type
  *
  * These tests are not mutually exclusive as the type of a property is not
- * encoded in the FDT. For example, is_u32, is_string and is_stringlist will
- * all return true for the property [0x70 0x6f 0x6f 0x00].
+ * encoded in the FDT. For example, is<uint32_t>, is_string and is_stringlist
+ * will all return true for the property [0x70 0x6f 0x6f 0x00].
+ *
+ * is<T> supports integral types, types for which std::tuple_size is defined
+ * and composite types thereof.
  */
 bool is_empty(const property &);
-bool is_u32(const property &);
-bool is_u64(const property &);
 bool is_string(const property &);
 bool is_stringlist(const property &);
+template<class T> bool is(const property &);
+template<class T> bool is_array(const property &);
 
 /*
  * as_*(property &) - convert property to type
@@ -140,11 +145,14 @@ bool is_stringlist(const property &);
  * Throws std::invalid_argument if the property can not be converted.
  *
  * Strings and bytes are returned as references to the property value.
+ *
+ * as<T> and as_array<T> support integral types, types for which
+ * std::tuple_size is defined and composite types thereof.
  */
-uint32_t as_u32(const property &);
-uint64_t as_u64(const property &);
 std::string_view as_string(const property &);
 std::vector<std::string_view> as_stringlist(const property &);
+template<class T> T as(const property &);
+template<class T> auto as_array(const property &);
 std::span<const std::byte> as_bytes(const property &);
 
 /*
@@ -365,6 +373,116 @@ const property& get_property(const fdt &, std::string_view path);
 /*
  * implementation details
  */
+namespace dtl {
+
+template<class...> inline constexpr bool false_v = false;
+
+template<typename T>
+constexpr size_t
+byte_size()
+{
+	if constexpr (std::is_integral_v<T>)
+		return sizeof(T);
+	else {
+		/* REVISIT: can we do this without constructing a T? */
+		return std::apply([](const auto &...v) {
+			return (byte_size<std::decay_t<decltype(v)>>() + ...);
+		}, T{});
+	}
+}
+
+template<typename T>
+std::enable_if_t<std::is_integral_v<T>, T>
+byteswap(T v)
+{
+	if constexpr (std::endian::native == std::endian::big)
+		return v;
+	else if constexpr (sizeof(T) == 1)
+		return v;
+	else if constexpr (sizeof(T) == 2)
+		return __builtin_bswap16(v);
+	else if constexpr (sizeof(T) == 4)
+		return __builtin_bswap32(v);
+	else if constexpr (sizeof(T) == 8)
+		return __builtin_bswap64(v);
+	else
+		static_assert(false_v<T>, "can't byteswap type");
+}
+
+template<typename T>
+T
+read_advance(std::span<const std::byte> &d)
+{
+	assert(d.size() >= byte_size<T>());
+	T t;
+	if constexpr (std::is_integral_v<T>) {
+		std::copy_n(data(d), sizeof(T), reinterpret_cast<std::byte *>(&t));
+		t = byteswap(t);
+		d = d.subspan(sizeof(t));
+	} else {
+		std::apply([&d](auto &...v) {
+			((v = read_advance<std::decay_t<decltype(v)>>(d)), ...);
+		}, t);
+	}
+	return t;
+}
+
+template<typename T>
+T
+read(std::span<const std::byte> d)
+{
+	return read_advance<T>(d);
+}
+
+}
+
+template<class T>
+bool
+is(const property &p)
+{
+	return size(as_bytes(p)) == dtl::byte_size<T>();
+}
+
+template<class T>
+bool
+is_array(const property &p)
+{
+	if (is_empty(p))
+		return false;
+	return size(as_bytes(p)) % dtl::byte_size<T>() == 0;
+}
+
+template<class T>
+T
+as(const property &p)
+{
+	if (!is<T>(p))
+		throw std::invalid_argument{"incompatible type"};
+	return dtl::read<T>(as_bytes(p));
+}
+
+template<class T>
+auto
+as_array(const property &p)
+{
+	if (!is_array<T>(p))
+		throw std::invalid_argument{"incompatible type"};
+	const auto sz{dtl::byte_size<T>()};
+	const auto n{size(as_bytes(p)) / sz};
+#ifdef __cpp_lib_ranges
+	return std::views::iota(decltype(n){0}, n) | std::views::transform(
+		[&p, sz](auto i) {
+			return dtl::read<T>(as_bytes(p).subspan(i * sz));
+	});
+#else
+	std::vector<T> t;
+	t.reserve(n);
+	for (size_t i{0}; i != n; ++i)
+		t.push_back(dtl::read<T>(as_bytes(p).subspan(i * sz)));
+	return t;
+#endif
+}
+
 template<class Key>
 bool
 node::set_compare::operator()(const Key &l, const piece_p &r) const
