@@ -84,6 +84,12 @@ std::optional<std::reference_wrapper<node>> parent(piece &);
 std::optional<std::reference_wrapper<const node>> parent(const piece &);
 
 /*
+ * root(piece &) - get root node of flattened device tree
+ */
+node &root(piece &);
+const node &root(const piece &);
+
+/*
  * is_*(piece &) - test if piece is property or node.
  */
 bool is_property(const piece &);

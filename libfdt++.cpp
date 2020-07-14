@@ -310,6 +310,22 @@ std::optional<std::reference_wrapper<const node>> parent(const piece &p)
 	return p.parent();
 }
 
+node &
+root(piece &p)
+{
+	if (!parent(p))
+		return as_node(p);
+	return root(parent(p).value());
+}
+
+const node &
+root(const piece &p)
+{
+	if (!parent(p))
+		return as_node(p);
+	return root(parent(p).value());
+}
+
 bool
 is_property(const piece &p)
 {

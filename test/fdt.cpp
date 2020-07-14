@@ -28,17 +28,35 @@ TEST(piece, parent)
 	auto f{fdt::load("path.dtb")};
 	const auto &fc{f};
 
-	/* piece::parent */
+	/* parent(piece &) */
 	EXPECT_FALSE(parent(root(f)).has_value());
 	EXPECT_EQ(&parent(get_node(f, "/l1@1"))->get(), &root(f));
 	EXPECT_EQ(&parent(get_node(f, "/l1@1/l2@1"))->get(), &get_node(f, "/l1@1"));
 	EXPECT_EQ(&parent(get_property(f, "/l1@1/l2@1/l1#1-l2#1-prop"))->get(), &get_node(f, "/l1@1/l2@1"));
 
-	/* piece::parent const */
+	/* parent(const piece &) */
 	EXPECT_FALSE(parent(root(fc)).has_value());
 	EXPECT_EQ(&parent(get_node(fc, "/l1@1"))->get(), &root(fc));
 	EXPECT_EQ(&parent(get_node(fc, "/l1@1/l2@1"))->get(), &get_node(fc, "/l1@1"));
 	EXPECT_EQ(&parent(get_property(fc, "/l1@1/l2@1/l1#1-l2#1-prop"))->get(), &get_node(fc, "/l1@1/l2@1"));
+}
+
+TEST(piece, root)
+{
+	auto f{fdt::load("path.dtb")};
+	const auto &fc{f};
+
+	/* root(piece &) */
+	EXPECT_EQ(&root(root(f)), &root(f));
+	EXPECT_EQ(&root(get_node(f, "/l1@1")), &root(f));
+	EXPECT_EQ(&root(get_node(f, "/l1@1/l2@1")), &root(f));
+	EXPECT_EQ(&root(get_property(f, "/l1@1/l2@1/l1#1-l2#1-prop")), &root(f));
+
+	/* root(const piece &) */
+	EXPECT_EQ(&root(root(fc)), &root(fc));
+	EXPECT_EQ(&root(get_node(fc, "/l1@1")), &root(fc));
+	EXPECT_EQ(&root(get_node(fc, "/l1@1/l2@1")), &root(fc));
+	EXPECT_EQ(&root(get_property(fc, "/l1@1/l2@1/l1#1-l2#1-prop")), &root(fc));
 }
 
 TEST(piece, conversion)
