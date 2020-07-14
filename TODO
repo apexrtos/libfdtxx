@@ -1,9 +1,9 @@
 libfdt++
 ========
 
-* github CI task to run on linux & windows
-* property set/get for std::span<uint32_t>, std::span<uint64_t>?
-  - maybe a nice way to get/set reg properties?
+* github CI task for clang
+* github CI task for MSVC
+* property set<T> like as<T>
 * return a range from as_stringlist (transform? filter?)
 * memory reservation block
 * boot cpuid
