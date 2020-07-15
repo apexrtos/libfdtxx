@@ -1,5 +1,5 @@
 /*
- * fdt++ - flattened device tree C++ library.
+ * fdt++ - flattened device tree C++ library
  *
  * Copyright 2020 Patrick Oppenlander <patrick.oppenlander@gmail.com>
  *
@@ -32,7 +32,7 @@ class node;
 class property;
 
 /*
- * piece - a piece of the devicetree structure block.
+ * piece - a piece of the devicetree structure block
  *
  * This can be a property or a node.
  */
@@ -76,7 +76,7 @@ std::string_view name(const piece &);
 std::string path(const piece &);
 
 /*
- * parent(piece &) - get node containing piece.
+ * parent(piece &) - get node containing piece
  *
  * Root node has no parent.
  */
@@ -90,13 +90,13 @@ node &root(piece &);
 const node &root(const piece &);
 
 /*
- * is_*(piece &) - test if piece is property or node.
+ * is_*(piece &) - test if piece is property or node
  */
 bool is_property(const piece &);
 bool is_node(const piece &);
 
 /*
- * as_*(piece &) - convert piece to property or node.
+ * as_*(piece &) - convert piece to property or node
  *
  * Throws std::bad_cast if the piece cannot be converted.
  */
@@ -106,7 +106,7 @@ node& as_node(piece &);
 const node& as_node(const piece &);
 
 /*
- * property - a devicetree property.
+ * property - a devicetree property
  */
 class property : public piece {
 public:
@@ -125,7 +125,7 @@ private:
 };
 
 /*
- * set(property &, *) - set property value.
+ * set(property &, *) - set property value
  */
 void set(property &, uint32_t);
 void set(property &, uint64_t);
@@ -167,7 +167,7 @@ template<class T> auto as_array(const property &);
 std::span<const std::byte> as_bytes(const property &);
 
 /*
- * node - a devicetree node.
+ * node - a devicetree node
  */
 class node : public piece {
 	using piece_p = std::unique_ptr<piece>;
@@ -210,7 +210,7 @@ std::string_view node_name(const node &);
 std::optional<std::string_view> unit_address(const node &);
 
 /*
- * children - get node children.
+ * children - get node children
  *
  * Returns an iterable container of piece references.
  */
@@ -218,7 +218,7 @@ template<class Node>
 auto children(Node &);
 
 /*
- * properties - get node properties.
+ * properties - get node properties
  *
  * Returns an iterable container of property references.
  */

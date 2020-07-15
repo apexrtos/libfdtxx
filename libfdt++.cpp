@@ -1,5 +1,5 @@
 /*
- * fdt++ - flattened device tree C++ library.
+ * fdt++ - flattened device tree C++ library
  *
  * Copyright 2020 Patrick Oppenlander <patrick.oppenlander@gmail.com>
  *
@@ -210,7 +210,7 @@ find_impl(T &n, std::string_view path)
 }
 
 /*
- * valid_node_char - test if character is allowed in node name or unit address.
+ * valid_node_char - test if character is allowed in node name or unit address
  *
  * See table 2.1 in the devicetree specification.
  */
@@ -225,7 +225,7 @@ valid_node_char(char c)
 }
 
 /*
- * valid_property_char - test if character is allowed in property name.
+ * valid_property_char - test if character is allowed in property name
  *
  * See table 2.2 in the devicetree specification.
  */
