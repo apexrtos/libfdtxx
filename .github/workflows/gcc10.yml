@@ -14,12 +14,16 @@ jobs:
                         - name: Setup
                           run: |
                                 pacman -Sy base-devel git gtest dtc libtommath wget --noconfirm
+                                useradd -m build
+                                sudo -i -u build
                                 wget https://aur.archlinux.org/cgit/aur.git/snapshot/libtomcrypt.tar.gz
                                 tar xf libtomcrypt.tar.gz
                                 cd libtomcrypt
                                 sed -i 's/check()/dont_check()/' PKGBUILD
-                                runuser nobody makepkg
-                                pacman -U --noconfirm libtomcrypt*.pkg.tar.xz
+                                gpg --recv-keys C4386A237ED43A475541B9427B2CD0DD4BCFF59B
+                                makepkg
+                                exit
+                                pacman -U --noconfirm /home/build/libtomcrypt/libtomcrypt*.pkg.tar.*
                         - name: Clone
                           uses: actions/checkout@v2
                         - name: Test
