@@ -13,7 +13,7 @@ jobs:
                 steps:
                         - name: Setup
                           run: |
-                                pacman -Sy base-devel git gtest dtc libtommath --noconfirm
+                                pacman -Sy base-devel git gtest dtc libtommath wget --noconfirm
                                 wget https://aur.archlinux.org/cgit/aur.git/snapshot/libtomcrypt.tar.gz
                                 tar xf libtomcrypt.tar.gz
                                 cd libtomcrypt
