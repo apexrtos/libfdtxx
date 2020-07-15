@@ -18,7 +18,7 @@ jobs:
                                 tar xf libtomcrypt.tar.gz
                                 cd libtomcrypt
                                 sed -i 's/check()/dont_check()/' PKGBUILD
-                                makepkg
+                                runuser nobody makepkg
                                 pacman -U --noconfirm libtomcrypt*.pkg.tar.xz
                         - name: Clone
                           uses: actions/checkout@v2
