@@ -410,12 +410,21 @@ byteswap(T v)
 		return v;
 	else if constexpr (sizeof(T) == 1)
 		return v;
+#ifdef _MSC_VER
+	else if constexpr (sizeof(T) == sizeof(unsigned short))
+		return _byteswap_ushort(v);
+	else if constexpr (sizeof(T) == sizeof(unsigned long))
+		return _byteswap_ulong(v);
+	else if constexpr (sizeof(T) == sizeof(uint64_t))
+		return _byteswap_uint64(v);
+#else
 	else if constexpr (sizeof(T) == 2)
 		return __builtin_bswap16(v);
 	else if constexpr (sizeof(T) == 4)
 		return __builtin_bswap32(v);
 	else if constexpr (sizeof(T) == 8)
 		return __builtin_bswap64(v);
+#endif
 	else
 		static_assert(false_v<T>, "can't byteswap type");
 }
