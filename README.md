@@ -6,9 +6,12 @@ libfdt++ is a C++ library for manipulating flattened device trees.
 libfit++
 ========
 
-libfit++ is a C++ library for manipulating flattened image trees.
+libfit++ is a C++ library for reading flattened image trees.
 
-Currently this supports verifying hashes and signatures.
+Supports is provided for verifying hashes, verifying signatures and decrypting
+image data.
+
+Creating and modifying FIT images is not currently supported.
 
 Tests
 =====
