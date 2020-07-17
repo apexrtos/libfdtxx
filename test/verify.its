@@ -5,7 +5,7 @@
 	images {
 		test-1 {
 			description = "Test Image Hashes and Signatures";
-			data = [000102030405060708090a0b0c0d0e0f10];
+			data = "test-1 data";
 			type = "firmware";
 			compression = "none";
 			hash-1 {
@@ -39,11 +39,122 @@
 		};
 		test-2 {
 			description = "Test Data for Configuration Signatures";
-			data = [100f0e0d0c0b0a09080706050403020100];
+			data = "test-2 data";
 			type = "firmware";
 			compression = "none";
 			hash {
 				algo = "sha256";
+			};
+		};
+		test-aes128 {
+			description = "Test Data for AES128 Encryption";
+			data = /incbin/("4k_random");
+			cipher {
+				algo = "aes128";
+				key-name-hint = "aes128_key";
+				iv-name-hint = "aes128_iv";
+			};
+			hash-1 {
+				algo = "crc32";
+			};
+			hash-2 {
+				algo = "md5";
+			};
+			hash-3 {
+				algo = "sha1";
+			};
+			hash-4 {
+				algo = "sha256";
+			};
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+			signature-4 {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+		};
+		test-aes192 {
+			description = "Test Data for AES192 Encryption";
+			data = "test-aes192 data";
+			cipher {
+				algo = "aes192";
+				key-name-hint = "aes192_key";
+				iv-name-hint = "aes192_iv";
+			};
+			hash-1 {
+				algo = "crc32";
+			};
+			hash-2 {
+				algo = "md5";
+			};
+			hash-3 {
+				algo = "sha1";
+			};
+			hash-4 {
+				algo = "sha256";
+			};
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+			signature-4 {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+		};
+		test-aes256 {
+			description = "Test Data for AES256 Encryption";
+			data = "test-aes256 data";
+			cipher {
+				algo = "aes256";
+				key-name-hint = "aes256_key";
+				iv-name-hint = "aes256_iv";
+			};
+			hash-1 {
+				algo = "crc32";
+			};
+			hash-2 {
+				algo = "md5";
+			};
+			hash-3 {
+				algo = "sha1";
+			};
+			hash-4 {
+				algo = "sha256";
+			};
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+			};
+			signature-4 {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
 			};
 		};
 	};
@@ -52,7 +163,22 @@
 		config-1 {
 			description = "Sign One Image";
 			image-1 = "test-1";
-			signature {
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+				sign-images = "image-1";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+				sign-images = "image-1";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+				sign-images = "image-1";
+			};
+			signature-4 {
 				algo = "sha256,rsa4096";
 				key-name-hint = "rsa4096";
 				sign-images = "image-1";
@@ -62,10 +188,51 @@
 			description = "Sign Two Images";
 			image-1 = "test-1";
 			image-2 = "test-2";
-			signature {
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+				sign-images = "image-1", "image-2";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+				sign-images = "image-1", "image-2";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+				sign-images = "image-1", "image-2";
+			};
+			signature-4 {
 				algo = "sha256,rsa4096";
 				key-name-hint = "rsa4096";
 				sign-images = "image-1", "image-2";
+			};
+		};
+		config-3 {
+			description = "Sign Encrypted Images";
+			image-1 = "test-aes128";
+			image-2 = "test-aes192";
+			image-3 = "test-aes256";
+			signature-1 {
+				algo = "sha1,rsa2048";
+				key-name-hint = "rsa2048";
+				sign-images = "image-1", "image-2", "image-3";
+			};
+			signature-2 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "rsa2048";
+				sign-images = "image-1", "image-2", "image-3";
+			};
+			signature-3 {
+				algo = "sha1,rsa4096";
+				key-name-hint = "rsa4096";
+				sign-images = "image-1", "image-2", "image-3";
+			};
+			signature-4 {
+				algo = "sha256,rsa4096";
+				key-name-hint = "rsa4096";
+				sign-images = "image-1", "image-2", "image-3";
 			};
 		};
 	};

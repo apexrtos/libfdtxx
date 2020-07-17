@@ -36,14 +36,21 @@ using read_fn = std::function<void(size_t off, size_t len, const process_fn &)>;
 /*
  * get_key_fn - get a key from key name hint
  *
- * This function is used to load keys for verification of FIT signatures.
+ * This function is used to load keys for verification of FIT signatures and
+ * to decrypt FIT data.
  *
  * Return key bytes if key is available.
- * Return std::nullopt if key not required.
+ * Return std::nullopt if key not required. Symmetric keys must be provided.
  *
  * An exception must be thrown if the key is required but cannot be loaded.
  */
+enum key_type {
+	public_key,
+	symmetric_key,
+	symmetric_iv,
+};
 using get_key_fn = std::function<std::optional<std::vector<std::byte>>(
+					key_type,
 					std::string_view key_name_hint)>;
 
 /*
@@ -52,6 +59,10 @@ using get_key_fn = std::function<std::optional<std::vector<std::byte>>(
  * This function retrieves the binary data for a FIT image node.
  *
  * fdt and read_fn must be provided to support FIT images with external data.
+ * get_key_fn must be provided to support FIT images with encrypted data.
+ *
+ * Note that there is no way to verify that the correct symmetric key is
+ * provided and therefore no guarantee that the decrypted data is sane.
  *
  * The data is passed to process_fn. process_fn can be called multiple times
  * with contiguous spans if the data is large.
@@ -64,7 +75,13 @@ void
 image_data(const fdt::node &, const process_fn &);
 
 void
+image_data(const fdt::node &, const process_fn &, const get_key_fn &);
+
+void
 image_data(const fdt::node &, const process_fn &,
+	   std::span<const std::byte> fdt, const read_fn &);
+void
+image_data(const fdt::node &, const process_fn &, const get_key_fn &,
 	   std::span<const std::byte> fdt, const read_fn &);
 
 /*

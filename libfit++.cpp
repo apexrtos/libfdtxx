@@ -130,12 +130,114 @@ private:
 };
 
 /*
+ * ltc_cipher - wrap up libtomcrypt cipher operations
+ */
+class ltc_cipher {
+public:
+	static int find(std::string_view name)
+	{
+		LTC_MUTEX_LOCK(&ltc_cipher_mutex);
+		for (auto i{0}; i < TAB_SIZE; i++) {
+			if (cipher_descriptor[i].name != name)
+				continue;
+			LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
+			return i;
+		}
+		LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
+
+		throw std::runtime_error{"cipher not supported"};
+	}
+};
+
+/*
+ * ltc_cbc - wrap up libtomcrypt cbc operations
+ */
+class ltc_cbc {
+public:
+	ltc_cbc(std::string_view cipher, std::span<const std::byte> key,
+		std::span<const std::byte> iv)
+	{
+		auto idx{ltc_cipher::find(cipher)};
+		if (static_cast<int>(size(iv)) != cipher_descriptor[idx].block_length)
+			throw std::runtime_error{"bad iv size"};
+		ltc_check(cbc_start(idx,
+			reinterpret_cast<const unsigned char *>(data(iv)),
+			reinterpret_cast<const unsigned char *>(data(key)),
+			size(key), 0, &cbc_));
+	}
+
+	~ltc_cbc()
+	{
+		cbc_done(&cbc_);
+	}
+
+	void
+	decrypt(std::span<const std::byte> ct, const process_fn &process)
+	{
+		/* REVISIT(efficiency): b_.resize() initalises memory */
+		/* REVISIT(efficiency): inplace decrypt for whole blocks? */
+
+		if (empty(ct))
+			return;
+
+		if (!empty(b_) ||
+		    size(ct) < static_cast<size_t>(cbc_.blocklen)) {
+			/* handle incomplete blocks */
+			const auto sz{std::min(cbc_.blocklen - size(b_),
+					       size(ct))};
+			b_.insert(end(b_), begin(ct), begin(ct) + sz);
+
+			/* not enough data to complete block */
+			if (size(b_) != static_cast<size_t>(cbc_.blocklen))
+				return;
+
+			/* decrypt complete reassembled block */
+			ltc_check(cbc_decrypt(
+				reinterpret_cast<const unsigned char *>(data(b_)),
+				reinterpret_cast<unsigned char *>(data(b_)),
+				size(b_), &cbc_));
+			process(b_);
+			b_.clear();
+
+			/* process remaining ciphertext */
+			return decrypt(ct.subspan(sz), process);
+		}
+
+		/* decrypt whole blocks */
+		const auto sz{size(ct) / cbc_.blocklen * cbc_.blocklen};
+		b_.resize(sz);
+		ltc_check(cbc_decrypt(
+			reinterpret_cast<const unsigned char *>(data(ct)),
+			reinterpret_cast<unsigned char *>(data(b_)),
+			sz, &cbc_));
+		process(b_);
+		b_.clear();
+
+		/* process remaining ciphertext */
+		return decrypt(ct.subspan(sz), process);
+	}
+
+private:
+	std::vector<std::byte> b_;
+	symmetric_CBC cbc_;
+};
+
+/*
  * no_external - read function stub when no external data source is provided
  */
 void
 no_external(size_t off, size_t len, const process_fn &fn)
 {
 	throw std::runtime_error{"no external data source"};
+}
+
+/*
+ * no_key - key function stub when no key source is provided
+ */
+std::optional<std::vector<std::byte>>
+no_key(key_type type, std::string_view key_name_hint)
+{
+	throw std::runtime_error{"no key source"};
 }
 
 /*
@@ -237,16 +339,11 @@ hash_raw_nodes(const std::span<const std::byte> fdt,
 	run_hash(false);
 }
 
-}
-
+/*
+ * image_data_raw - retrieve potentially encrypted image data
+ */
 void
-image_data(const fdt::node &n, const process_fn &process)
-{
-	return image_data(n, process, empty_span, no_external);
-}
-
-void
-image_data(const fdt::node &n, const process_fn &process,
+image_data_raw(const fdt::node &n, const process_fn &process,
 	   std::span<const std::byte> fdt, const read_fn &read)
 {
 	/* inline data */
@@ -277,6 +374,68 @@ image_data(const fdt::node &n, const process_fn &process,
 	throw std::runtime_error{"missing data property"};
 }
 
+}
+
+void
+image_data(const fdt::node &n, const process_fn &process)
+{
+	return image_data(n, process, no_key, empty_span, no_external);
+}
+
+void
+image_data(const fdt::node &n, const process_fn &process,
+	   const get_key_fn &get_key)
+{
+	return image_data(n, process, get_key, empty_span, no_external);
+}
+
+void
+image_data(const fdt::node &n, const process_fn &process,
+	   std::span<const std::byte> fdt, const read_fn &read)
+{
+	return image_data(n, process, no_key, fdt, read);
+}
+
+void
+image_data(const fdt::node &n, const process_fn &process,
+	   const get_key_fn &get_key,
+	   std::span<const std::byte> fdt, const read_fn &read)
+{
+	/* encrypted data */
+	const auto &have_cipher{find(n, "cipher")};
+	if (!have_cipher)
+		return image_data_raw(n, process, fdt, read);
+
+	/* get cipher properties */
+	const auto &cipher{as_node(have_cipher.value())};
+	const auto &algo{as_string(get_property(cipher, "algo"))};
+	const auto &key_name_hint{as_string(get_property(cipher, "key-name-hint"))};
+	const auto &iv_name_hint{as_string(get_property(cipher, "iv-name-hint"))};
+	const auto &keylen_begin{std::find_if(begin(algo), end(algo), isdigit)};
+	const auto &cipher_name{algo.substr(0, keylen_begin - begin(algo))};
+
+	/* get key & iv bytes */
+	const auto &kb{get_key(key_type::symmetric_key, key_name_hint)};
+	const auto &ib{get_key(key_type::symmetric_iv, iv_name_hint)};
+
+	/* symmetric keys must be provided */
+	if (!kb || !ib)
+		throw std::runtime_error{"missing symmetric key or iv"};
+
+	/* decrypt image */
+	ltc_cbc cbc{cipher_name, kb.value(), ib.value()};
+	size_t remain{as<uint32_t>(get_property(n, "data-size-unciphered"))};
+	image_data_raw(n, [&](std::span<const std::byte> ct) {
+		cbc.decrypt(ct, [&](std::span<const std::byte> pt) {
+			const auto sz{std::min(size(pt), remain)};
+			if (!sz)
+				return;
+			process({data(pt), sz});
+			remain -= sz;
+		});
+	}, fdt, read);
+}
+
 bool
 verify_image_hashes(const fdt::node &n)
 {
@@ -302,7 +461,7 @@ verify_image_hashes(const fdt::node &n,
 				return false;
 			crc32_state s;
 			crc32_init(&s);
-			image_data(n, [&s](std::span<const std::byte> d) {
+			image_data_raw(n, [&s](std::span<const std::byte> d) {
 				   crc32_update(&s, reinterpret_cast<const unsigned char *>(data(d)), size(d));
 			}, fdt, read);
 			crc32_finish(&s, data(h), size(h));
@@ -314,7 +473,7 @@ verify_image_hashes(const fdt::node &n,
 #endif
 		} else {
 			ltc_hash h{algo};
-			image_data(n, [&](std::span<const std::byte> d) {
+			image_data_raw(n, [&](std::span<const std::byte> d) {
 				h.process(d);
 			}, fdt, read);
 			h.done();
@@ -365,7 +524,7 @@ verify_image_signatures(const fdt::node &n, const get_key_fn &get_key,
 			throw std::runtime_error{"signature algorithm not supported"};
 
 		/* get key bytes */
-		const auto &kb{get_key(key_name_hint)};
+		const auto &kb{get_key(key_type::public_key, key_name_hint)};
 
 		/* key not required? */
 		if (!kb)
@@ -424,7 +583,7 @@ verify_config_signatures(const fdt::node &n, const get_key_fn &get_key,
 		const auto exclude_props = {"data"sv, "data-size"sv, "data-position"sv, "data-offset"sv};
 
 		/* get key bytes */
-		const auto &kb{get_key(key_name_hint)};
+		const auto &kb{get_key(key_type::public_key, key_name_hint)};
 
 		/* key not required? */
 		if (!kb)
