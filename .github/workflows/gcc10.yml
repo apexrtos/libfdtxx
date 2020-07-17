@@ -29,4 +29,6 @@ jobs:
                         - name: Clone
                           uses: actions/checkout@v2
                         - name: Test
-                          run: make check
+                          run: |
+                                make touch_dtbs
+                                make check

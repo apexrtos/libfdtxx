@@ -1,11 +1,11 @@
 CXXFLAGS := -ggdb -std=c++20 -Wall
 
+DTBS := test/basic.dtb test/path.dtb test/properties.dtb \
+	test/verify.fit test/verify-offset.fit test/verify-position.fit
+
 check: test/passed
 
-test/passed: Makefile \
-	     test/test \
-	     test/basic.dtb test/path.dtb test/properties.dtb \
-	     test/verify.fit test/verify-offset.fit test/verify-position.fit
+test/passed: Makefile test/test $(DTBS)
 	cd test && ./test
 	touch test/passed
 
@@ -39,6 +39,9 @@ test/aes%_key.bin test/aes%_iv.bin&:
 
 %-position.fit: %.its
 	mkimage -E -p 0x8000 -k test -f $< $@
+
+touch_dtbs:
+	touch $(DTBS)
 
 clean:
 	rm -f test/test test/passed
