@@ -41,11 +41,7 @@ ltc_check(int ret)
 class ltc_hash {
 public:
 	ltc_hash(std::string_view name)
-	: ltc_hash{find(name)}
-	{ }
-
-	ltc_hash(int idx)
-	: hd_{hash_descriptor[idx]}
+	: hd_{hash_descriptor[find(name)]}
 	{
 		assert(hd_.hashsize <= size(hash_));
 		ltc_check(hd_.init(&state_));
