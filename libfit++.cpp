@@ -126,7 +126,7 @@ public:
 	}
 
 private:
-	rsa_key k_{};
+	rsa_key k_;
 };
 
 /*
