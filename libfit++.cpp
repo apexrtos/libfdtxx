@@ -354,8 +354,15 @@ verify_image_signatures(const fdt::node &n, const get_key_fn &get_key,
 		const auto &key_name_hint{as_string(get_property(s, "key-name-hint"))};
 		const auto &algo{as_string(get_property(s, "algo"))};
 		const auto &sval{as_bytes(get_property(s, "value"))};
-		const auto &hash_algo{algo.substr(0, algo.find(','))};
+		const auto &algo_split{algo.find(',')};
+		if (algo_split == std::string_view::npos)
+			throw std::runtime_error{"signature algorithm not supported"};
+		const auto &hash_algo{algo.substr(0, algo_split)};
+		const auto &sig_algo{algo.substr(algo_split + 1)};
 		const auto &hval{get_hash_value(n, hash_algo)};
+
+		if (!sig_algo.starts_with("rsa"))
+			throw std::runtime_error{"signature algorithm not supported"};
 
 		/* get key bytes */
 		const auto &kb{get_key(key_name_hint)};
