@@ -14,4 +14,6 @@ libfdt++
 libfit++
 ========
 
-* support for encrypted image data
+* support creating FIT images
+* support modifying FIT images
+* support writing FIT images
