@@ -1,5 +1,6 @@
 #include "libfit++.h"
 
+#include <array>
 #include <tomcrypt.h>
 
 extern "C" {
@@ -267,7 +268,7 @@ hash_raw_nodes(const std::span<const std::byte> fdt,
 {
 	std::string path;
 	int off, noff{0}, hoff{-1};
-	const int soff{fdt_off_dt_struct(data(fdt))};
+	const auto soff{fdt_off_dt_struct(data(fdt))};
 
 	auto run_hash = [&](bool run) {
 		if (run) {
