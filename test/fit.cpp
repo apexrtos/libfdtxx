@@ -30,7 +30,7 @@ get_key(fit::key_type type, std::string_view key_name_hint)
 std::vector<std::byte>
 read_file(const std::filesystem::path &p)
 {
-	std::vector<std::byte> d{std::filesystem::file_size(p)};
+	std::vector<std::byte> d(std::filesystem::file_size(p));
 	std::ifstream f{p, std::ios::binary};
 	f.read(reinterpret_cast<char *>(data(d)), size(d));
 	return d;
