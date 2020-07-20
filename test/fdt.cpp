@@ -747,14 +747,14 @@ TEST(property, as_u32)
 
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as<T>(get_property(f, "/property-empty")), std::invalid_argument);
-	EXPECT_EQ(as<T>(get_property(f, "/property-u32")), 32);
+	EXPECT_EQ(as<T>(get_property(f, "/property-u32")), 32u);
 	EXPECT_THROW(as<T>(get_property(f, "/property-u64")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-string")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-stringlist")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-1")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-2")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-3")), std::invalid_argument);
-	EXPECT_EQ(as<T>(get_property(f, "/property-4")), 0x01020304);
+	EXPECT_EQ(as<T>(get_property(f, "/property-4")), 0x01020304u);
 	EXPECT_THROW(as<T>(get_property(f, "/property-5")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-6")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-7")), std::invalid_argument);
@@ -792,7 +792,7 @@ TEST(property, as_u64)
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as<T>(get_property(f, "/property-empty")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-u32")), std::invalid_argument);
-	EXPECT_EQ(as<T>(get_property(f, "/property-u64")), 64);
+	EXPECT_EQ(as<T>(get_property(f, "/property-u64")), 64u);
 	EXPECT_THROW(as<T>(get_property(f, "/property-string")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-stringlist")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-1")), std::invalid_argument);
@@ -802,7 +802,7 @@ TEST(property, as_u64)
 	EXPECT_THROW(as<T>(get_property(f, "/property-5")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-6")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-7")), std::invalid_argument);
-	EXPECT_EQ(as<T>(get_property(f, "/property-8")), 0x0102030405060708);
+	EXPECT_EQ(as<T>(get_property(f, "/property-8")), 0x0102030405060708u);
 	EXPECT_THROW(as<T>(get_property(f, "/property-9")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-10")), std::invalid_argument);
 	EXPECT_THROW(as<T>(get_property(f, "/property-11")), std::invalid_argument);
@@ -1494,21 +1494,21 @@ TEST(node, find)
 	const auto &fc{f};
 
 	/* find(node &) */
-	EXPECT_EQ(as<uint32_t>(as_property(*find(root(f), "l1@1/l2@1/l1#1-l2#1-prop"))), 11);
-	EXPECT_EQ(as<uint32_t>(as_property(*find(root(f), "l1@2/l2@1/l1#2-l2#1-prop"))), 21);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(root(f), "l1@1/l2@1/l1#1-l2#1-prop"))), 11u);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(root(f), "l1@2/l2@1/l1#2-l2#1-prop"))), 21u);
 	EXPECT_TRUE(is_node(*find(root(f), "l1@2/l2@1")));
 	EXPECT_TRUE(is_node(*find(root(f), "l1@1/l2")));
-	EXPECT_EQ(as<uint32_t>(as_property(*find(root(f), "l1@1/l2/l1#1-l2#1-prop"))), 11);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(root(f), "l1@1/l2/l1#1-l2#1-prop"))), 11u);
 	EXPECT_THROW(find(root(f), "l1@1//l2"), std::invalid_argument);
 	EXPECT_THROW(find(root(f), "/x"), std::invalid_argument);
 	EXPECT_FALSE(find(root(f), "x").has_value());
 
 	/* find(const node &) */
-	EXPECT_EQ(as<uint32_t>(as_property(*find(root(fc), "l1@1/l2@1/l1#1-l2#1-prop"))), 11);
-	EXPECT_EQ(as<uint32_t>(as_property(*find(root(fc), "l1@2/l2@1/l1#2-l2#1-prop"))), 21);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(root(fc), "l1@1/l2@1/l1#1-l2#1-prop"))), 11u);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(root(fc), "l1@2/l2@1/l1#2-l2#1-prop"))), 21u);
 	EXPECT_TRUE(is_node(*find(root(fc), "l1@2/l2@1")));
 	EXPECT_TRUE(is_node(*find(root(fc), "l1@1/l2")));
-	EXPECT_EQ(as<uint32_t>(as_property(*find(root(fc), "l1@1/l2/l1#1-l2#1-prop"))), 11);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(root(fc), "l1@1/l2/l1#1-l2#1-prop"))), 11u);
 	EXPECT_THROW(find(root(fc), "l1@1//l2"), std::invalid_argument);
 	EXPECT_THROW(find(root(fc), "/x"), std::invalid_argument);
 	EXPECT_FALSE(find(root(fc), "x").has_value());
@@ -1558,21 +1558,21 @@ TEST(fdt, find)
 	const auto &fc{f};
 
 	/* find(fdt &) */
-	EXPECT_EQ(as<uint32_t>(as_property(*find(f, "/l1@1/l2@1/l1#1-l2#1-prop"))), 11);
-	EXPECT_EQ(as<uint32_t>(as_property(*find(f, "/l1@2/l2@1/l1#2-l2#1-prop"))), 21);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(f, "/l1@1/l2@1/l1#1-l2#1-prop"))), 11u);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(f, "/l1@2/l2@1/l1#2-l2#1-prop"))), 21u);
 	EXPECT_TRUE(is_node(*find(f, "/l1@2/l2@1")));
 	EXPECT_TRUE(is_node(*find(f, "/l1@1/l2")));
-	EXPECT_EQ(as<uint32_t>(as_property(*find(f, "/l1@1/l2/l1#1-l2#1-prop"))), 11);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(f, "/l1@1/l2/l1#1-l2#1-prop"))), 11u);
 	EXPECT_THROW(find(f, "/l1@1//l2"), std::invalid_argument);
 	EXPECT_THROW(find(f, "x"), std::invalid_argument);
 	EXPECT_FALSE(find(f, "/x").has_value());
 
 	/* find(fdt node &) */
-	EXPECT_EQ(as<uint32_t>(as_property(*find(fc, "/l1@1/l2@1/l1#1-l2#1-prop"))), 11);
-	EXPECT_EQ(as<uint32_t>(as_property(*find(fc, "/l1@2/l2@1/l1#2-l2#1-prop"))), 21);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(fc, "/l1@1/l2@1/l1#1-l2#1-prop"))), 11u);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(fc, "/l1@2/l2@1/l1#2-l2#1-prop"))), 21u);
 	EXPECT_TRUE(is_node(*find(fc, "/l1@2/l2@1")));
 	EXPECT_TRUE(is_node(*find(fc, "/l1@1/l2")));
-	EXPECT_EQ(as<uint32_t>(as_property(*find(fc, "/l1@1/l2/l1#1-l2#1-prop"))), 11);
+	EXPECT_EQ(as<uint32_t>(as_property(*find(fc, "/l1@1/l2/l1#1-l2#1-prop"))), 11u);
 	EXPECT_THROW(find(fc, "/l1@1//l2"), std::invalid_argument);
 	EXPECT_THROW(find(fc, "x"), std::invalid_argument);
 	EXPECT_FALSE(find(fc, "/x").has_value());
