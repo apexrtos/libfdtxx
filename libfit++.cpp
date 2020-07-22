@@ -9,6 +9,22 @@ extern "C" {
 
 using namespace std::literals;
 
+/*
+ * These defines are to limit supported key formats at compile time to reduce
+ * code size, e.g.:
+ *
+ * gcc -DRSA_PKCS_8=0 -DRSA_X509=0
+ */
+#ifndef RSA_PKCS_1
+	#define RSA_PKCS_1 1
+#endif
+#ifndef RSA_PKCS_8
+	#define RSA_PKCS_8 1
+#endif
+#ifndef RSA_X509
+	#define RSA_X509 1
+#endif
+
 namespace fit {
 
 namespace {
@@ -96,10 +112,16 @@ public:
 	ltc_rsa(std::span<const std::byte> k)
 	{
 		const unsigned char *d{reinterpret_cast<const unsigned char *>(data(k))};
-		if (rsa_import(d, size(k), &k_) != CRYPT_OK &&
-		    rsa_import_pkcs8(d, size(k), nullptr, 0, &k_) != CRYPT_OK &&
-		    rsa_import_x509(d, size(k), &k_) != CRYPT_OK)
-			throw std::runtime_error{"rsa key import failed"};
+		if (RSA_PKCS_1 &&
+		    rsa_import(d, size(k), &k_) == CRYPT_OK)
+			return;
+		if (RSA_PKCS_8 &&
+		    rsa_import_pkcs8(d, size(k), nullptr, 0, &k_) == CRYPT_OK)
+			return;
+		if (RSA_X509 &&
+		    rsa_import_x509(d, size(k), &k_) == CRYPT_OK)
+			return;
+		throw std::runtime_error{"rsa key import failed"};
 	}
 	ltc_rsa(ltc_rsa &&) = delete;
 	ltc_rsa(const ltc_rsa &) = delete;
