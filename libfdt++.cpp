@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <fstream>
 #include <type_traits>
+#include <unistd.h>
 
 extern "C" {
 #include <libfdt.h>
@@ -238,6 +239,24 @@ valid_property_char(char c)
 	    (c >= 'A' && c <= 'Z') ||
 	    c == ',' || c == '.' || c == '_' || c == '+' ||
 	    c == '?' || c == '#' || c == '-';
+}
+
+/*
+ * load_keep - load a flattened devicetree blob and return loaded bytes
+ *
+ * Read incoming data from fill function.
+ */
+std::pair<fdt, std::vector<std::byte>>
+load_keep(const std::function<void(size_t, std::vector<std::byte> &)> &fill)
+{
+	std::vector<std::byte> d;
+	fill(FDT_V1_SIZE, d);
+	fill(fdt_header_size(data(d)), d);
+	if (auto r = fdt_check_header(data(d)); r < 0)
+		throw std::runtime_error{fdt_strerror(r)};
+	fill(fdt_totalsize(data(d)), d);
+
+	return {::fdt::load(d), std::move(d)};
 }
 
 }
@@ -691,33 +710,45 @@ load(std::span<const std::byte> d)
 }
 
 fdt
+load(const int fd)
+{
+	return load_keep(fd).first;
+}
+
+fdt
 load(const std::filesystem::path &p)
 {
 	return load_keep(p).first;
 }
 
 std::pair<fdt, std::vector<std::byte>>
+load_keep(const int fd)
+{
+	return load_keep([fd](size_t len, std::vector<std::byte> &d) {
+		auto off{d.size()};
+		d.resize(len);
+		while (off != len) {
+			const auto rd{read(fd, data(d) + off, len - off)};
+			if (rd < 0)
+				throw std::runtime_error{strerror(errno)};
+			if (rd == 0)
+				throw std::runtime_error{fdt_strerror(FDT_ERR_TRUNCATED)};
+			off += rd;
+		}
+	});
+}
+
+std::pair<fdt, std::vector<std::byte>>
 load_keep(const std::filesystem::path &p)
 {
-	/* REVISIT(efficiency): something lighter than ifstream? */
-	std::vector<std::byte> d;
 	std::ifstream f(p, std::ios::binary);
-
-	auto fill = [&](size_t len) {
+	return load_keep([&](size_t len, std::vector<std::byte> &d) {
 		const auto prev{d.size()};
 		d.resize(len);
 		f.read(reinterpret_cast<char *>(data(d)) + prev, len - prev);
 		if (static_cast<size_t>(f.gcount()) != len - prev)
 			throw std::runtime_error{fdt_strerror(FDT_ERR_TRUNCATED)};
-	};
-
-	fill(FDT_V1_SIZE);
-	fill(fdt_header_size(data(d)));
-	if (auto r = fdt_check_header(data(d)); r < 0)
-		throw std::runtime_error{fdt_strerror(r)};
-	fill(fdt_totalsize(data(d)));
-
-	return {load(d), std::move(d)};
+	});
 }
 
 std::vector<std::byte>

@@ -2,6 +2,8 @@
 
 #include "../libfdt++.h"
 
+#include <fcntl.h>
+
 namespace {
 
 constexpr std::byte
@@ -1629,6 +1631,8 @@ TEST(fdt, save_load)
 	const auto &f1{fdt::load("path.dtb")};
 	const auto &s{save(f1)};
 	const auto &f2{fdt::load(s)};
+	const auto &f3{fdt::load(open("path.dtb", O_RDONLY))};
 
 	EXPECT_EQ(f1, f2);
+	EXPECT_EQ(f1, f3);
 }

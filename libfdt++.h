@@ -331,7 +331,9 @@ const node& root(const fdt &);
  * Throws exceptions.
  */
 fdt load(std::span<const std::byte>);
+fdt load(int fd);
 fdt load(const std::filesystem::path &);
+std::pair<fdt, std::vector<std::byte>> load_keep(int fd);
 std::pair<fdt, std::vector<std::byte>> load_keep(const std::filesystem::path &);
 
 /*
