@@ -109,8 +109,22 @@ private:
  */
 class ltc_rsa {
 public:
-	ltc_rsa(std::span<const std::byte> k)
+	ltc_rsa() = default;
+	ltc_rsa(ltc_rsa &&) = delete;
+	ltc_rsa(const ltc_rsa &) = delete;
+	ltc_rsa &operator=(ltc_rsa &&) = delete;
+	ltc_rsa &operator=(const ltc_rsa &) = delete;
+
+	~ltc_rsa()
 	{
+		rsa_free(&k_);
+	}
+
+	void
+	load(std::span<const std::byte> k)
+	{
+		rsa_free(&k_);
+
 		const unsigned char *d{reinterpret_cast<const unsigned char *>(data(k))};
 		if (RSA_PKCS_1 &&
 		    rsa_import(d, size(k), &k_) == CRYPT_OK)
@@ -122,15 +136,6 @@ public:
 		    rsa_import_x509(d, size(k), &k_) == CRYPT_OK)
 			return;
 		throw std::runtime_error{"rsa key import failed"};
-	}
-	ltc_rsa(ltc_rsa &&) = delete;
-	ltc_rsa(const ltc_rsa &) = delete;
-	ltc_rsa &operator=(ltc_rsa &&) = delete;
-	ltc_rsa &operator=(const ltc_rsa &) = delete;
-
-	~ltc_rsa()
-	{
-		rsa_free(&k_);
 	}
 
 	bool
@@ -149,7 +154,7 @@ public:
 	}
 
 private:
-	rsa_key k_;
+	rsa_key k_{};
 };
 
 /*
@@ -177,9 +182,23 @@ public:
  */
 class ltc_cbc {
 public:
-	ltc_cbc(std::string_view cipher, std::span<const std::byte> key,
-		std::span<const std::byte> iv)
+	ltc_cbc() = default;
+	ltc_cbc(ltc_cbc &&) = delete;
+	ltc_cbc(const ltc_cbc &) = delete;
+	ltc_cbc &operator=(ltc_cbc &&) = delete;
+	ltc_cbc &operator=(const ltc_cbc &) = delete;
+
+	~ltc_cbc()
 	{
+		cbc_done(&cbc_);
+	}
+
+	void
+	init(std::string_view cipher, std::span<const std::byte> key,
+	     std::span<const std::byte> iv)
+	{
+		cbc_done(&cbc_);
+
 		auto idx{ltc_cipher::find(cipher)};
 		if (static_cast<int>(size(iv)) != cipher_descriptor[idx].block_length)
 			throw std::runtime_error{"bad iv size"};
@@ -187,11 +206,6 @@ public:
 			reinterpret_cast<const unsigned char *>(data(iv)),
 			reinterpret_cast<const unsigned char *>(data(key)),
 			size(key), 0, &cbc_));
-	}
-
-	~ltc_cbc()
-	{
-		cbc_done(&cbc_);
 	}
 
 	void
@@ -242,7 +256,7 @@ public:
 
 private:
 	std::vector<std::byte> b_;
-	symmetric_CBC cbc_;
+	symmetric_CBC cbc_{};
 };
 
 /*
@@ -257,8 +271,8 @@ no_external(size_t off, size_t len, const process_fn &fn)
 /*
  * no_key - key function stub when no key source is provided
  */
-std::optional<std::vector<std::byte>>
-no_key(key_type type, std::string_view key_name_hint)
+void
+no_key(std::string_view key_name, std::string_view iv_name, const key_iv_fn &f)
 {
 	throw std::runtime_error{"no key source"};
 }
@@ -407,7 +421,7 @@ image_data(const fdt::node &n, const process_fn &process)
 
 void
 image_data(const fdt::node &n, const process_fn &process,
-	   const get_key_fn &get_key)
+	   const get_symmetric_key_fn &get_key)
 {
 	return image_data(n, process, get_key, empty_span, no_external);
 }
@@ -421,7 +435,7 @@ image_data(const fdt::node &n, const process_fn &process,
 
 void
 image_data(const fdt::node &n, const process_fn &process,
-	   const get_key_fn &get_key,
+	   const get_symmetric_key_fn &get_key,
 	   std::span<const std::byte> fdt, const read_fn &read)
 {
 	/* encrypted data */
@@ -432,21 +446,25 @@ image_data(const fdt::node &n, const process_fn &process,
 	/* get cipher properties */
 	const auto &cipher{as_node(have_cipher.value())};
 	const auto &algo{as_string(get_property(cipher, "algo"))};
-	const auto &key_name_hint{as_string(get_property(cipher, "key-name-hint"))};
-	const auto &iv_name_hint{as_string(get_property(cipher, "iv-name-hint"))};
+	const auto &key_name{as_string(get_property(cipher, "key-name-hint"))};
+	const auto &iv_name{as_string(get_property(cipher, "iv-name-hint"))};
 	const auto &keylen_begin{std::find_if(begin(algo), end(algo), isdigit)};
 	const auto &cipher_name{algo.substr(0, keylen_begin - begin(algo))};
 
-	/* get key & iv bytes */
-	const auto &kb{get_key(key_type::symmetric_key, key_name_hint)};
-	const auto &ib{get_key(key_type::symmetric_iv, iv_name_hint)};
+	/* load key */
+	bool loaded{false};
+	ltc_cbc cbc;
+	get_key(key_name, iv_name, [&](std::span<const std::byte> key,
+				       std::span<const std::byte> iv) {
+		cbc.init(cipher_name, key, iv);
+		loaded = true;
+	});
 
 	/* symmetric keys must be provided */
-	if (!kb || !ib)
-		throw std::runtime_error{"missing symmetric key or iv"};
+	if (!loaded)
+		throw std::runtime_error{"missing symmetric key"};
 
 	/* decrypt image */
-	ltc_cbc cbc{cipher_name, kb.value(), ib.value()};
 	size_t remain{as<uint32_t>(get_property(n, "data-size-unciphered"))};
 	image_data_raw(n, [&](std::span<const std::byte> ct) {
 		cbc.decrypt(ct, [&](std::span<const std::byte> pt) {
@@ -513,13 +531,13 @@ verify_image_hashes(const fdt::node &n,
 }
 
 bool
-verify_image_signatures(const fdt::node &n, const get_key_fn &get_key)
+verify_image_signatures(const fdt::node &n, const get_public_key_fn &get_key)
 {
 	return verify_image_signatures(n, get_key, empty_span, no_external);
 }
 
 bool
-verify_image_signatures(const fdt::node &n, const get_key_fn &get_key,
+verify_image_signatures(const fdt::node &n, const get_public_key_fn &get_key,
 			std::span<const std::byte> fdt, const read_fn &read)
 {
 	/* make sure image hasn't been corrupted */
@@ -533,7 +551,7 @@ verify_image_signatures(const fdt::node &n, const get_key_fn &get_key,
 			continue;
 
 		/* get signature properties */
-		const auto &key_name_hint{as_string(get_property(s, "key-name-hint"))};
+		const auto &key_name{as_string(get_property(s, "key-name-hint"))};
 		const auto &algo{as_string(get_property(s, "algo"))};
 		const auto &sval{as_bytes(get_property(s, "value"))};
 		const auto &algo_split{algo.find(',')};
@@ -546,15 +564,17 @@ verify_image_signatures(const fdt::node &n, const get_key_fn &get_key,
 		if (!sig_algo.starts_with("rsa"))
 			throw std::runtime_error{"signature algorithm not supported"};
 
-		/* get key bytes */
-		const auto &kb{get_key(key_type::public_key, key_name_hint)};
+		/* load key */
+		ltc_rsa rsa;
+		bool loaded{false};
+		get_key(key_name, [&](std::span<const std::byte> d) {
+			rsa.load(d);
+			loaded = true;
+		});
 
 		/* key not required? */
-		if (!kb)
+		if (!loaded)
 			continue;
-
-		/* load key */
-		ltc_rsa rsa{kb.value()};
 
 		/* verify signature */
 		if (!rsa.verify(sval, hval, hash_algo))
@@ -570,14 +590,14 @@ verify_image_signatures(const fdt::node &n, const get_key_fn &get_key,
 }
 
 bool
-verify_config_signatures(const fdt::node &n, const get_key_fn &get_key,
+verify_config_signatures(const fdt::node &n, const get_public_key_fn &get_key,
 			 std::span<const std::byte> fdt)
 {
 	return verify_config_signatures(n, get_key, fdt, no_external);
 }
 
 bool
-verify_config_signatures(const fdt::node &n, const get_key_fn &get_key,
+verify_config_signatures(const fdt::node &n, const get_public_key_fn &get_key,
 			 std::span<const std::byte> fdt, const read_fn &read)
 {
 	/* sanity check fdt blob */
@@ -602,14 +622,19 @@ verify_config_signatures(const fdt::node &n, const get_key_fn &get_key,
 		const auto &sval{as_bytes(get_property(s, "value"))};
 		const auto &algo{as_string(get_property(s, "algo"))};
 		const auto &hash_algo{algo.substr(0, algo.find(','))};
-		const auto &key_name_hint{as_string(get_property(s, "key-name-hint"))};
+		const auto &key_name{as_string(get_property(s, "key-name-hint"))};
 		const auto exclude_props = {"data"sv, "data-size"sv, "data-position"sv, "data-offset"sv};
 
-		/* get key bytes */
-		const auto &kb{get_key(key_type::public_key, key_name_hint)};
+		/* load key */
+		ltc_rsa rsa;
+		bool loaded{false};
+		get_key(key_name, [&](std::span<const std::byte> d) {
+			rsa.load(d);
+			loaded = true;
+		});
 
 		/* key not required? */
-		if (!kb)
+		if (!loaded)
 			continue;
 
 		/* sanity check - configuration must hash itself */
@@ -638,9 +663,6 @@ verify_config_signatures(const fdt::node &n, const get_key_fn &get_key,
 		hash_raw_nodes(fdt, hashed_nodes, exclude_props, h);
 		h.process(fdt.subspan(strings_off, strings_size));
 		h.done();
-
-		/* load key */
-		ltc_rsa rsa{kb.value()};
 
 		/* verify signature */
 		if (!rsa.verify(sval, h.value(), hash_algo))
