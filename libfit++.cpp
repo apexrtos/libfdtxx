@@ -413,6 +413,21 @@ image_data_raw(const fdt::node &n, const process_fn &process,
 
 }
 
+size_t
+image_data_size(const fdt::node &n)
+{
+	/* encrypted data */
+	if (const auto &s{find(n, "data-size-unciphered")}; s)
+		return as<uint32_t>(as_property(*s));
+
+	/* inline data */
+	if (const auto &d{find(n, "data")}; d)
+		return size(as_bytes(as_property(*d)));
+
+	/* external data */
+	return as<uint32_t>(get_property(n, "data-size"));
+}
+
 void
 image_data(const fdt::node &n, const process_fn &process)
 {

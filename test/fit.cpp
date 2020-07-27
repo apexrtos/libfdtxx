@@ -254,6 +254,36 @@ TEST(fit, verify_config_signatures_position)
 	}));
 }
 
+TEST(fit, image_data_size_inline)
+{
+	const auto &f{fdt::load("verify.fit")};
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-1")), 12);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-2")), 12);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes128")), 4096);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes192")), 17);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes256")), 17);
+}
+
+TEST(fit, image_data_size_offset)
+{
+	const auto &f{fdt::load("verify-offset.fit")};
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-1")), 12);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-2")), 12);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes128")), 4096);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes192")), 17);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes256")), 17);
+}
+
+TEST(fit, image_data_size_position)
+{
+	const auto &f{fdt::load("verify-position.fit")};
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-1")), 12);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-2")), 12);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes128")), 4096);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes192")), 17);
+	EXPECT_EQ(fit::image_data_size(get_node(f, "/images/test-aes256")), 17);
+}
+
 TEST(fit, image_data_inline)
 {
 	using std::ranges::equal;

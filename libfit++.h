@@ -60,6 +60,16 @@ using get_symmetric_key_fn = std::function<void(std::string_view key_name,
 						const key_iv_fn &)>;
 
 /*
+ * image_data_size - get data size for image
+ *
+ * This function returns the size of the binary data for a FIT image node.
+ *
+ * Throws libfdt++ exceptions if the node is not a valid FIT image node.
+ */
+size_t
+image_data_size(const fdt::node &);
+
+/*
  * image_data - retrieve data for image
  *
  * This function retrieves the binary data for a FIT image node.
