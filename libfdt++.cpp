@@ -9,8 +9,13 @@
 
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <type_traits>
+#ifdef _MSC_VER
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 extern "C" {
 #include <libfdt.h>
