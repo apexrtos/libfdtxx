@@ -549,8 +549,8 @@ node::children() const
 #else
 	std::vector<std::reference_wrapper<const piece>> t;
 	t.reserve(children_.size());
-	for (auto &p : children_)
-		t.push_back(std::ref(*p));
+	for (const auto &p : children_)
+		t.push_back(std::cref(*p));
 	return t;
 #endif
 }
