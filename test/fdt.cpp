@@ -12,6 +12,17 @@ operator""_b(unsigned long long v)
 	return static_cast<std::byte>(v);
 }
 
+#ifdef __cpp_lib_ranges
+using std::ranges::equal;
+#else
+bool equal(const auto &l, const auto &r)
+{
+	if (size(l) != size(r))
+		return false;
+	return std::equal(begin(l), end(l), begin(r));
+}
+#endif
+
 }
 
 TEST(piece, path)
@@ -1099,7 +1110,6 @@ TEST(property, as_array_tuple_u32u64_2)
 TEST(property, as_u32_array)
 {
 	using T = uint32_t;
-	using std::ranges::equal;
 
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as_array<T>(get_property(f, "/property-empty")), std::invalid_argument);
@@ -1154,7 +1164,6 @@ TEST(property, as_u32_array)
 TEST(property, as_u64_array)
 {
 	using T = uint64_t;
-	using std::ranges::equal;
 
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as_array<T>(get_property(f, "/property-empty")), std::invalid_argument);
@@ -1204,7 +1213,6 @@ TEST(property, as_u64_array)
 TEST(property, as_pair_u32u64_array)
 {
 	using T = std::pair<uint32_t, uint64_t>;
-	using std::ranges::equal;
 
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as_array<T>(get_property(f, "/property-empty")), std::invalid_argument);
@@ -1251,7 +1259,6 @@ TEST(property, as_pair_u32u64_array)
 TEST(property, as_tuple_u8u16u32u64_array)
 {
 	using T = std::tuple<uint8_t, uint16_t, uint32_t, uint64_t>;
-	using std::ranges::equal;
 
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as_array<T>(get_property(f, "/property-empty")), std::invalid_argument);
@@ -1298,7 +1305,6 @@ TEST(property, as_tuple_u8u16u32u64_array)
 TEST(property, as_array_u32_3_array)
 {
 	using T = std::array<uint32_t, 3>;
-	using std::ranges::equal;
 
 	const auto &f{fdt::load("properties.dtb")};
 	EXPECT_THROW(as_array<T>(get_property(f, "/property-empty")), std::invalid_argument);
@@ -1344,8 +1350,6 @@ TEST(property, as_array_u32_3_array)
 
 TEST(property, as_bytes)
 {
-	using std::ranges::equal;
-
 	const auto &f{fdt::load("properties.dtb")};
 	const std::span<std::byte> val_empty;
 	EXPECT_TRUE(equal(as_bytes(get_property(f, "/property-empty")), val_empty));

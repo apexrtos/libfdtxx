@@ -78,6 +78,17 @@ as_bytes(const char *s)
 	return {reinterpret_cast<const std::byte *>(s), strlen(s) + 1};
 }
 
+#ifdef __cpp_lib_ranges
+using std::ranges::equal;
+#else
+bool equal(const auto &l, const auto &r)
+{
+	if (size(l) != size(r))
+		return false;
+	return std::equal(begin(l), end(l), begin(r));
+}
+#endif
+
 }
 
 TEST(fit, verify_image_hashes_inline)
@@ -286,8 +297,6 @@ TEST(fit, image_data_size_position)
 
 TEST(fit, image_data_inline)
 {
-	using std::ranges::equal;
-
 	std::vector<std::byte> data;
 
 	const auto &f{fdt::load("verify.fit")};
@@ -325,8 +334,6 @@ TEST(fit, image_data_inline)
 
 TEST(fit, image_data_offset)
 {
-	using std::ranges::equal;
-
 	std::vector<std::byte> data;
 
 	const auto &[f, fd]{fdt::load_keep("verify-offset.fit")};
@@ -379,8 +386,6 @@ TEST(fit, image_data_offset)
 
 TEST(fit, image_data_position)
 {
-	using std::ranges::equal;
-
 	std::vector<std::byte> data;
 
 	const auto &[f, fd]{fdt::load_keep("verify-position.fit")};
@@ -433,8 +438,6 @@ TEST(fit, image_data_position)
 
 TEST(fit, decrypt_fuzz)
 {
-	using std::ranges::equal;
-
 	std::vector<std::byte> data;
 
 	const auto &[f, fd]{fdt::load_keep("verify-position.fit")};

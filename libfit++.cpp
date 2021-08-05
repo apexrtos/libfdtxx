@@ -513,16 +513,20 @@ verify_image_hashes(const fdt::node &n,
 		if (algo == "crc32") {
 #ifdef LTC_CRC32
 			std::array<std::byte, 4> h;
-			if (size(value) != size(h))
-				return false;
 			crc32_state s;
 			crc32_init(&s);
 			image_data_raw(n, [&s](std::span<const std::byte> d) {
 				   crc32_update(&s, reinterpret_cast<const unsigned char *>(data(d)), size(d));
 			}, fdt, read);
 			crc32_finish(&s, data(h), size(h));
+#ifdef __cpp_lib_ranges
 			if (!std::ranges::equal(h, value))
 				return false;
+#else
+			if (size(value) != size(h) ||
+			    !std::equal(begin(value), end(value), begin(h)))
+				return false;
+#endif
 			have_hash = true;
 #else
 			throw std::runtime_error{"crc32 not supported"};
@@ -533,8 +537,14 @@ verify_image_hashes(const fdt::node &n,
 				h.process(d);
 			}, fdt, read);
 			h.done();
+#ifdef __cpp_lib_ranges
 			if (!std::ranges::equal(h.value(), value))
 				return false;
+#else
+			if (size(h.value()) != size(value) ||
+			    !std::equal(begin(value), end(value), begin(h.value())))
+				return false;
+#endif
 			have_hash = true;
 		}
 	}
