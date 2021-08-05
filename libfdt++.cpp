@@ -295,7 +295,13 @@ piece::parent()
 std::optional<std::reference_wrapper<const node>>
 piece::parent() const
 {
+#if __clang__
+	if (parent_)
+		return parent_->get();
+	return {};
+#else
 	return parent_;
+#endif
 }
 
 bool
